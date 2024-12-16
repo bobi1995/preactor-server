@@ -1,0 +1,75 @@
+type Query {
+  hello: String
+  getResources: [Resource]
+  getResource(id: ID!): Resource
+  getShifts: [Shift]
+  getShift(id: ID!): Shift
+  getBreaks: [Break]
+}
+
+type Mutation {
+  createResource(input: ResourceInput!): Resource
+  createShift(input: ShiftInput!): Shift
+  createBreak(input: BreakInput!): Break
+  assignBreakToShift(shiftId: ID!, breakId: ID!): Shift
+}
+
+type Resource {
+  id: ID!
+  name: String!
+  description: String
+  color: String
+  picture: String
+  orders: [Order]
+  regularShift: Shift
+  alternateShifts: [Shift]
+  canReplace: [Resource] # Updated from `replacable` to match Prisma's `canReplace`
+  replacedBy: [Resource] # Explicitly added to reflect Prisma relationship
+  restrictions: [Restriction]
+}
+
+type Order {
+  id: ID!
+  orderNumber: String!
+}
+
+type Shift {
+  id: ID!
+  name: String!
+  startHour: String!
+  endHour: String!
+  breaks: [Break]
+}
+
+type Restriction {
+  id: ID!
+  name: String!
+  description: String
+}
+
+type Break {
+  id: ID!
+  name: String!
+  startHour: String!
+  endHour: String!
+}
+
+input ResourceInput {
+  name: String!
+  description: String
+  color: String
+  picture: String
+  regularShiftId: ID
+}
+
+input ShiftInput {
+  name: String!
+  startHour: String!
+  endHour: String!
+}
+
+input BreakInput {
+  name: String!
+  startHour: String!
+  endHour: String!
+}

@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+model Resource {
+  id              String        @id @default(cuid()) // Replace cuid() with nanoid in application logic
+  name            String
+  description     String?
+  picture         String?
+  color           String?
+  regularShiftId  String?
+  regularShift    Shift?        @relation("ResourceRegularShift", fields: [regularShiftId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  alternateShifts AlternativeShift[]
+  canReplace      Replacement[] @relation("ResourceReplacements") // Previously "replacements"
+  replacedBy      Replacement[] @relation("ResourceReplacedBy")   // Previously "replacedBy"
+  restrictions    REL_Restriction_Resource[] // Many-to-many via join table
+  orders          Order[]       @relation("ResourceOrders")
+}
+
+model Order {
+  id          String    @id @default(cuid()) // Replace cuid() with nanoid in application logic
+  orderNumber String
+  resource    Resource? @relation("ResourceOrders", fields: [resourceId], references: [id], onDelete: Cascade)
+  resourceId  String?
+}
+
+model Shift {
+  id              String        @id @default(cuid()) // Replace cuid() with nanoid in application logic
+  name            String
+  startHour       String
+  endHour         String
+  regularResources Resource[]   @relation("ResourceRegularShift")
+  alternateShifts AlternativeShift[]
+  breaks          REL_Break_Shift[] // Many-to-many via join table
+}
+
+model Break {
+  id        String            @id @default(cuid())
+  name      String
+  startHour String
+  endHour   String
+  shifts    REL_Break_Shift[] // Many-to-many via join table
+}
+
+model Restriction {
+  id          String @id @default(cuid()) // Replace cuid() with nanoid in application logic
+  name        String
+  description String?
+  resources   REL_Restriction_Resource[]
+}
+
+model REL_Restriction_Resource {
+  id            String       @id @default(cuid())
+  resource      Resource     @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  resourceId    String
+  restriction   Restriction  @relation(fields: [restrictionId], references: [id], onDelete: Cascade)
+  restrictionId String
+}
+
+model AlternativeShift {
+  id          String   @id @default(cuid()) // Replace cuid() with nanoid in application logic
+  shift       Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  shiftId     String
+  resource    Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  resourceId  String
+  day         String
+}
+
+model REL_Break_Shift {
+  id       String @id @default(cuid())
+  shift    Shift  @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  shiftId  String
+  break    Break  @relation(fields: [breakId], references: [id], onDelete: Cascade)
+  breakId  String
+}
+
+model Replacement {
+  id            String   @id @default(cuid())
+  resource      Resource @relation("ResourceReplacements", fields: [resourceId], references: [id], onDelete: NoAction, onUpdate: NoAction) // Previously "canReplace"
+  resourceId    String
+  replacedBy    Resource @relation("ResourceReplacedBy", fields: [replacedById], references: [id], onDelete: NoAction, onUpdate: NoAction) // Previously "replacedBy"
+  replacedById  String
+}
