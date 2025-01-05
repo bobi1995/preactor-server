@@ -5,6 +5,15 @@ export const getResources = async () => {
   return resources;
 };
 
+export const getResourcesByRegularShiftId = async (regularShiftId) => {
+  const resource = await prisma.resource.findMany({
+    where: {
+      regularShiftId,
+    },
+  });
+  return resource;
+};
+
 export const getResource = async (id) => {
   const resource = await prisma.resource.findUnique({
     where: {

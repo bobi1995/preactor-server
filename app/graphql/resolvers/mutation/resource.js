@@ -43,3 +43,32 @@ export const uploadPicture = async ({ picPath, id }) => {
   });
   return resource;
 };
+
+export const assignShiftToResource = async ({ resourceId, shiftId }) => {
+  const resource = await prisma.resource.update({
+    where: {
+      id: resourceId,
+    },
+    data: {
+      regularShiftId: shiftId,
+    },
+  });
+  return resource;
+};
+
+export const assignAlternativeShift = async ({
+  resourceId,
+  shiftId,
+  startDate,
+  endDate,
+}) => {
+  const alternativeShift = await prisma.alternativeShift.create({
+    data: {
+      shiftId,
+      resourceId,
+      startDate,
+      endDate,
+    },
+  });
+  return alternativeShift;
+};

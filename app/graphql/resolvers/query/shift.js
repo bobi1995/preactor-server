@@ -16,12 +16,19 @@ export const getShiftById = async (id) => {
 };
 
 export const getAlternateShifts = async (resourceId) => {
+  console.log("here");
   const shifts = await prisma.alternativeShift.findMany({
     where: {
       resourceId,
+      gte: Math.floor(
+        new Date(new Date().setDate(new Date().getDate() - 1)).getTime() / 1000
+      ),
+    },
+    include: {
+      shift: true,
     },
   });
-  return shifts;
+  return shifts.length > 0 ? shifts : [];
 };
 
 export const getBreaks = async () => {

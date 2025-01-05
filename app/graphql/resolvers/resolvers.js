@@ -1,10 +1,15 @@
 import { GraphQLError } from "graphql";
-import { createResource } from "./mutation/resource.js";
+import {
+  assignAlternativeShift,
+  assignShiftToResource,
+  createResource,
+} from "./mutation/resource.js";
 import {
   getReplacements,
   getResources,
   getResource,
   getCanReplace,
+  getResourcesByRegularShiftId,
 } from "./query/resource.js";
 import { getRestrictions } from "./query/restriction.js";
 import {
@@ -18,6 +23,8 @@ import {
   assignBreakToShift,
   createBreak,
   createShift,
+  deleteBreak,
+  deleteBreakFromShift,
 } from "./mutation/shift.js";
 
 export const resolvers = {
@@ -47,16 +54,27 @@ export const resolvers = {
     createBreak: async (_, { input }) => createBreak({ input }),
     assignBreakToShift: async (_, { shiftId, breakId }) =>
       assignBreakToShift({ shiftId, breakId }),
+    assignShiftToResource: async (_, { resourceId, shiftId }) =>
+      assignShiftToResource({ resourceId, shiftId }),
+    assignAlternativeShiftToResource: async (
+      _,
+      { resourceId, shiftId, startDate, endDate }
+    ) => {
+      return assignAlternativeShift({
+        resourceId,
+        shiftId,
+        startDate,
+        endDate,
+      });
+    },
+    deleteBreak: async (_, { id }) => deleteBreak({ id }),
+    deleteBreakFromShift: async (_, { shiftId, breakId }) =>
+      deleteBreakFromShift({ shiftId, breakId }),
   },
   Resource: {
     regularShift: (resource) =>
-      resource.regularShift ? getShiftById(resource.regularShift) : null,
-    alternateShifts: (resource) =>
-      resource.alternateShifts ? getAlternateShifts(resource.id) : [],
-    replacedBy: (resource) =>
-      resource.replacedBy ? getReplacements(resource.id) : [],
-    canReplace: (resource) =>
-      resource.replacedBy ? getCanReplace(resource.id) : [],
+      resource.regularShiftId ? getShiftById(resource.regularShiftId) : null,
+    alternateShifts: (resource) => getAlternateShifts(resource.id),
     restrictions: (resource) =>
       resource.restrictions ? getRestrictions(resource.id) : [],
     orders: () => [],
@@ -65,6 +83,7 @@ export const resolvers = {
     startHour: (shift) => shift.startHour,
     endHour: (shift) => shift.endHour,
     breaks: (shift) => getShiftBreaks(shift.id),
+    resources: (shift) => getResourcesByRegularShiftId(shift.id),
   },
   Break: {
     startHour: (shift) => shift.startHour,
