@@ -16,13 +16,15 @@ export const getShiftById = async (id) => {
 };
 
 export const getAlternateShifts = async (resourceId) => {
-  console.log("here");
   const shifts = await prisma.alternativeShift.findMany({
     where: {
       resourceId,
-      gte: Math.floor(
-        new Date(new Date().setDate(new Date().getDate() - 1)).getTime() / 1000
-      ),
+      endDate: {
+        gte: Math.floor(
+          new Date(new Date().setDate(new Date().getDate() - 1)).getTime() /
+            1000
+        ).toString(),
+      },
     },
     include: {
       shift: true,
