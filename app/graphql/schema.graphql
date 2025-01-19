@@ -5,20 +5,30 @@ type Query {
   getShifts: [Shift]
   getShift(id: ID!): Shift
   getBreaks: [Break]
+  getSchedules: [WeekSchedule]
+  getSchedule(id: ID!): WeekSchedule
 }
 
 type Mutation {
   createResource(input: ResourceInput!): Resource
   createShift(input: ShiftInput!): Shift
   createBreak(input: BreakInput!): Break
+  createSchedule(name: String!): WeekSchedule
+  updateSchedule(id: ID!, input: WeekScheduleInput!): WeekSchedule
   assignBreakToShift(shiftId: ID!, breakId: ID!): Shift
-  assignShiftToResource(resourceId: ID!, shiftId: ID!): Resource
+  assignSchedule(resourceId: ID!, scheduleId: ID!): Resource
   assignAlternativeShiftToResource(
     resourceId: ID!
     shiftId: ID!
     startDate: String
     endDate: String
-  ): Resource
+  ): AlternativeShift
+  assignMassiveAlternative(
+    resourceIds: [ID!]!
+    shiftId: ID!
+    startDate: String
+    endDate: String
+  ): Shift
   deleteBreak(id: ID!): Break
   deleteBreakFromShift(shiftId: ID!, breakId: ID!): Shift
 }
@@ -31,7 +41,7 @@ type Resource {
   picture: String
   external_code: String
   orders: [Order]
-  regularShift: Shift
+  schedule: WeekSchedule
   alternateShifts: [AlternativeShift]
   restrictions: [Restriction]
 }
@@ -47,7 +57,18 @@ type Shift {
   startHour: String!
   endHour: String!
   breaks: [Break]
-  resources: [Resource]
+}
+
+type WeekSchedule {
+  id: ID!
+  name: String!
+  monday: Shift
+  tuesday: Shift
+  wednesday: Shift
+  thursday: Shift
+  friday: Shift
+  saturday: Shift
+  sunday: Shift
 }
 
 type AlternativeShift {
@@ -89,4 +110,15 @@ input BreakInput {
   name: String!
   startHour: String!
   endHour: String!
+}
+
+input WeekScheduleInput {
+  name: String!
+  mondayShiftId: String
+  tuesdayShiftId: String
+  wednesdayShiftId: String
+  thursdayShiftId: String
+  fridayShiftId: String
+  saturdayShiftId: String
+  sundayShiftId: String
 }

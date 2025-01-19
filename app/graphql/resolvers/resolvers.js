@@ -1,16 +1,11 @@
 import { GraphQLError } from "graphql";
 import {
   assignAlternativeShift,
-  assignShiftToResource,
+  assignMassiveAlternative,
+  assignSchedule,
   createResource,
 } from "./mutation/resource.js";
-import {
-  getReplacements,
-  getResources,
-  getResource,
-  getCanReplace,
-  getResourcesByRegularShiftId,
-} from "./query/resource.js";
+import { getResources, getResource } from "./query/resource.js";
 import { getRestrictions } from "./query/restriction.js";
 import {
   getShiftById,
@@ -26,6 +21,8 @@ import {
   deleteBreak,
   deleteBreakFromShift,
 } from "./mutation/shift.js";
+import { getScheduleById, getSchedules } from "./query/schedule.js";
+import { createSchedule, updateSchedule } from "./mutation/schedule.js";
 
 export const resolvers = {
   Query: {
@@ -47,15 +44,25 @@ export const resolvers = {
       return shift;
     },
     getBreaks: () => getBreaks(),
+    getSchedules: () => getSchedules(),
+    getSchedule: async (_, { id }) => {
+      const schedule = await getScheduleById(id);
+      if (!schedule) {
+        throw notFoundError("Schedule not found");
+      }
+      return schedule;
+    },
   },
   Mutation: {
     createResource: async (_, { input }) => createResource({ input }),
     createShift: async (_, { input }) => createShift({ input }),
     createBreak: async (_, { input }) => createBreak({ input }),
+    createSchedule: async (_, { name }) => createSchedule({ name }),
+    updateSchedule: async (_, { id, input }) => updateSchedule({ id, input }),
     assignBreakToShift: async (_, { shiftId, breakId }) =>
       assignBreakToShift({ shiftId, breakId }),
-    assignShiftToResource: async (_, { resourceId, shiftId }) =>
-      assignShiftToResource({ resourceId, shiftId }),
+    assignSchedule: async (_, { resourceId, scheduleId }) =>
+      assignSchedule({ resourceId, scheduleId }),
     assignAlternativeShiftToResource: async (
       _,
       { resourceId, shiftId, startDate, endDate }
@@ -67,13 +74,24 @@ export const resolvers = {
         endDate,
       });
     },
+    assignMassiveAlternative: async (
+      _,
+      { resourceIds, shiftId, startDate, endDate }
+    ) => {
+      return assignMassiveAlternative({
+        resourceIds,
+        shiftId,
+        startDate,
+        endDate,
+      });
+    },
     deleteBreak: async (_, { id }) => deleteBreak({ id }),
     deleteBreakFromShift: async (_, { shiftId, breakId }) =>
       deleteBreakFromShift({ shiftId, breakId }),
   },
   Resource: {
-    regularShift: (resource) =>
-      resource.regularShiftId ? getShiftById(resource.regularShiftId) : null,
+    schedule: (resource) =>
+      resource.scheduleId ? getScheduleById(resource.scheduleId) : null,
     alternateShifts: (resource) => getAlternateShifts(resource.id),
     restrictions: (resource) =>
       resource.restrictions ? getRestrictions(resource.id) : [],
@@ -83,7 +101,24 @@ export const resolvers = {
     startHour: (shift) => shift.startHour,
     endHour: (shift) => shift.endHour,
     breaks: (shift) => getShiftBreaks(shift.id),
-    resources: (shift) => getResourcesByRegularShiftId(shift.id),
+  },
+  WeekSchedule: {
+    monday: (schedule) =>
+      schedule.mondayShiftId ? getShiftById(schedule.mondayShiftId) : null,
+    tuesday: (schedule) =>
+      schedule.tuesdayShiftId ? getShiftById(schedule.tuesdayShiftId) : null,
+    wednesday: (schedule) =>
+      schedule.wednesdayShiftId
+        ? getShiftById(schedule.wednesdayShiftId)
+        : null,
+    thursday: (schedule) =>
+      schedule.thursdayShiftId ? getShiftById(schedule.thursdayShiftId) : null,
+    friday: (schedule) =>
+      schedule.fridayShiftId ? getShiftById(schedule.fridayShiftId) : null,
+    saturday: (schedule) =>
+      schedule.saturdayShiftId ? getShiftById(schedule.saturdayShiftId) : null,
+    sunday: (schedule) =>
+      schedule.sundayShiftId ? getShiftById(schedule.sundayShiftId) : null,
   },
   Break: {
     startHour: (shift) => shift.startHour,

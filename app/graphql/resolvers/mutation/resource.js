@@ -44,13 +44,13 @@ export const uploadPicture = async ({ picPath, id }) => {
   return resource;
 };
 
-export const assignShiftToResource = async ({ resourceId, shiftId }) => {
+export const assignSchedule = async ({ resourceId, scheduleId }) => {
   const resource = await prisma.resource.update({
     where: {
       id: resourceId,
     },
     data: {
-      regularShiftId: shiftId,
+      scheduleId,
     },
   });
   return resource;
@@ -71,4 +71,48 @@ export const assignAlternativeShift = async ({
     },
   });
   return alternativeShift;
+};
+
+export const assignMassiveAlternative = async ({
+  resourceIds,
+  shiftId,
+  startDate,
+  endDate,
+}) => {
+  const alternativeShifts = await Promise.all(
+    resourceIds.map(async (resourceId) => {
+      // Check if there is already an alternative shift for the resource on the specified day
+      const existingShift = await prisma.alternativeShift.findFirst({
+        where: {
+          resourceId,
+          startDate,
+          endDate,
+        },
+      });
+
+      // Delete the existing shift if it exists
+      if (existingShift) {
+        console.log("Deleting existing");
+        await prisma.alternativeShift.delete({
+          where: {
+            id: existingShift.id,
+          },
+        });
+      }
+
+      // Assign a new alternative shift
+
+      console.log("Creating....");
+
+      return await prisma.alternativeShift.create({
+        data: {
+          shiftId,
+          resourceId,
+          startDate,
+          endDate,
+        },
+      });
+    })
+  );
+  return alternativeShifts[0];
 };

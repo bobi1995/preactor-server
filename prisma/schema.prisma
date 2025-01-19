@@ -13,9 +13,9 @@ model Resource {
   description     String?
   picture         String?
   color           String?
-  regularShiftId  String?
+  scheduleId      String?
   external_code   String?
-  regularShift    Shift?                     @relation("ResourceRegularShift", fields: [regularShiftId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  schedule    WeekSchedule?         @relation("ResourceSchedule", fields: [scheduleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   alternateShifts AlternativeShift[]
   restrictions    REL_Restriction_Resource[] // Many-to-many via join table
   orders          Order[]                    @relation("ResourceOrders")
@@ -33,7 +33,6 @@ model Shift {
   name             String
   startHour        String
   endHour          String
-  regularResources Resource[]         @relation("ResourceRegularShift")
   alternateShifts  AlternativeShift[]
   breaks           REL_Break_Shift[] // Many-to-many via join table
 }
@@ -77,4 +76,17 @@ model REL_Break_Shift {
   shiftId String
   break   Break  @relation(fields: [breakId], references: [id], onDelete: Cascade)
   breakId String
+}
+
+model WeekSchedule {
+  id              String @id @default(cuid()) // Replace cuid() with nanoid in application logic
+  name            String @unique
+  mondayShiftId   String?
+  tuesdayShiftId  String?
+  wednesdayShiftId String?
+  thursdayShiftId String?
+  fridayShiftId   String?
+  saturdayShiftId String?
+  sundayShiftId   String?
+  resources Resource[]         @relation("ResourceSchedule")
 }
