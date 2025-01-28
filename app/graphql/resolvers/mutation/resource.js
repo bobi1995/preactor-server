@@ -101,9 +101,6 @@ export const assignMassiveAlternative = async ({
       }
 
       // Assign a new alternative shift
-
-      console.log("Creating....");
-
       return await prisma.alternativeShift.create({
         data: {
           shiftId,
