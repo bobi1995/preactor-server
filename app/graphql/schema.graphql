@@ -2,6 +2,7 @@ type Query {
   hello: String
   getResources: [Resource]
   getResource(id: ID!): Resource
+  getGroups: [Group]
   getShifts: [Shift]
   getShift(id: ID!): Shift
   getBreaks: [Break]
@@ -11,6 +12,7 @@ type Query {
 
 type Mutation {
   createResource(input: ResourceInput!): Resource
+  createGroup(name: String!, description: String): Group
   createShift(input: ShiftInput!): Shift
   createBreak(input: BreakInput!): Break
   createSchedule(name: String!): WeekSchedule
@@ -29,8 +31,11 @@ type Mutation {
     startDate: String
     endDate: String
   ): Shift
+  addResourceToGroup(groupId: ID!, resourceId: ID!): String
   deleteBreak(id: ID!): Break
   deleteBreakFromShift(shiftId: ID!, breakId: ID!): Shift
+  deleteAlternativeShift(id: ID!): AlternativeShift
+  deleteSchedule(id: ID!): WeekSchedule
 }
 
 type Resource {
@@ -44,6 +49,13 @@ type Resource {
   schedule: WeekSchedule
   alternateShifts: [AlternativeShift]
   restrictions: [Restriction]
+}
+
+type Group {
+  id: ID!
+  name: String!
+  description: String
+  resources: [Resource]
 }
 
 type Order {

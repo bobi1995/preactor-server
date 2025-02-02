@@ -23,20 +23,11 @@ export const getResource = async (id) => {
   return resource;
 };
 
-export const getReplacements = async (resId) => {
-  const replacements = await prisma.replacement.findMany({
+export const getResourcesByGroupId = async (groupId) => {
+  const resources = await prisma.rEL_group_resource.findMany({
     where: {
-      replacedBy: resId,
+      groupId,
     },
   });
-  return replacements;
-};
-
-export const getCanReplace = async (resId) => {
-  const replacements = await prisma.replacement.findMany({
-    where: {
-      resourceId: resId,
-    },
-  });
-  return replacements;
+  return resources;
 };

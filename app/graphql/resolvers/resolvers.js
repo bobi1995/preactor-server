@@ -4,8 +4,13 @@ import {
   assignMassiveAlternative,
   assignSchedule,
   createResource,
+  deleteAlternativeShift,
 } from "./mutation/resource.js";
-import { getResources, getResource } from "./query/resource.js";
+import {
+  getResources,
+  getResource,
+  getResourcesByGroupId,
+} from "./query/resource.js";
 import { getRestrictions } from "./query/restriction.js";
 import {
   getShiftById,
@@ -22,7 +27,13 @@ import {
   deleteBreakFromShift,
 } from "./mutation/shift.js";
 import { getScheduleById, getSchedules } from "./query/schedule.js";
-import { createSchedule, updateSchedule } from "./mutation/schedule.js";
+import {
+  createSchedule,
+  deleteSchedule,
+  updateSchedule,
+} from "./mutation/schedule.js";
+import { getGroups } from "./query/group.js";
+import { addResourceToGroup, createGroup } from "./mutation/groups.js";
 
 export const resolvers = {
   Query: {
@@ -35,6 +46,7 @@ export const resolvers = {
       }
       return resource;
     },
+    getGroups: () => getGroups(),
     getShifts: () => getShifts(),
     getShift: async (_, { id }) => {
       const shift = await getShiftById(id);
@@ -55,6 +67,8 @@ export const resolvers = {
   },
   Mutation: {
     createResource: async (_, { input }) => createResource({ input }),
+    createGroup: async (_, { name, description }) =>
+      createGroup({ name, description }),
     createShift: async (_, { input }) => createShift({ input }),
     createBreak: async (_, { input }) => createBreak({ input }),
     createSchedule: async (_, { name }) => createSchedule({ name }),
@@ -85,9 +99,13 @@ export const resolvers = {
         endDate,
       });
     },
+    addResourceToGroup: async (_, { groupId, resourceId }) =>
+      addResourceToGroup({ groupId, resourceId }),
     deleteBreak: async (_, { id }) => deleteBreak({ id }),
     deleteBreakFromShift: async (_, { shiftId, breakId }) =>
       deleteBreakFromShift({ shiftId, breakId }),
+    deleteAlternativeShift: async (_, { id }) => deleteAlternativeShift({ id }),
+    deleteSchedule: async (_, { id }) => deleteSchedule({ id }),
   },
   Resource: {
     schedule: (resource) =>
@@ -96,6 +114,11 @@ export const resolvers = {
     restrictions: (resource) =>
       resource.restrictions ? getRestrictions(resource.id) : [],
     orders: () => [],
+  },
+  Group: {
+    resources: (group) => {
+      return getResourcesByGroupId(group.id);
+    },
   },
   Shift: {
     startHour: (shift) => shift.startHour,

@@ -113,3 +113,12 @@ export const assignMassiveAlternative = async ({
   );
   return alternativeShifts[0];
 };
+
+export const deleteAlternativeShift = async ({ id }) => {
+  const alternativeShift = await prisma.alternativeShift.delete({
+    where: {
+      id,
+    },
+  });
+  return alternativeShift;
+};
