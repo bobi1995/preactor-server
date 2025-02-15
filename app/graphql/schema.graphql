@@ -8,6 +8,7 @@ type Query {
   getBreaks: [Break]
   getSchedules: [WeekSchedule]
   getSchedule(id: ID!): WeekSchedule
+  getOrders: [Orders]
 }
 
 type Mutation {
@@ -31,11 +32,12 @@ type Mutation {
     startDate: String
     endDate: String
   ): Shift
-  addResourceToGroup(groupId: ID!, resourceId: ID!): String
+  addResourcesToGroup(groupId: ID!, resourceIds: [ID!]): String
   deleteBreak(id: ID!): Break
   deleteBreakFromShift(shiftId: ID!, breakId: ID!): Shift
   deleteAlternativeShift(id: ID!): AlternativeShift
   deleteSchedule(id: ID!): WeekSchedule
+  deleteResourceFromGroup(groupId: ID!, resourceId: ID!): String
 }
 
 type Resource {
@@ -45,10 +47,11 @@ type Resource {
   color: String
   picture: String
   external_code: String
-  orders: [Order]
+  orders: [Orders]
   schedule: WeekSchedule
   alternateShifts: [AlternativeShift]
   restrictions: [Restriction]
+  groups: [Group]
 }
 
 type Group {
@@ -58,9 +61,21 @@ type Group {
   resources: [Resource]
 }
 
-type Order {
+type Orders {
   id: ID!
-  orderNumber: String!
+  OrderNo: String!
+  OpNo: Int
+  Resource: Resource
+  DueDate: String
+  OperationName: String
+  SetupTime: Float
+  OpTimePerItem: Float
+  SetupStart: String
+  StartTime: String
+  EndTime: String
+  PartNo: String
+  Product: String
+  Quantity: Float
 }
 
 type Shift {

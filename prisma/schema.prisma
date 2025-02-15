@@ -18,22 +18,34 @@ model Resource {
   schedule           WeekSchedule?              @relation("ResourceSchedule", fields: [scheduleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   alternateShifts    AlternativeShift[]
   restrictions       REL_Restriction_Resource[] // Many-to-many via join table
-  orders             Order[]                    @relation("ResourceOrders")
-  REL_group_resource REL_group_resource[]
+  orders             Orders[]                    @relation("ResourceOrders")
+  groups REL_group_resource[]
 }
 
 model Group {
   id                 String               @id @default(cuid()) // Replace cuid() with nanoid in application logic
   name               String
   description        String?
-  REL_group_resource REL_group_resource[]
+  resources REL_group_resource[]
 }
 
-model Order {
-  id          String    @id @default(cuid()) // Replace cuid() with nanoid in application logic
-  orderNumber String
-  resource    Resource? @relation("ResourceOrders", fields: [resourceId], references: [id], onDelete: Cascade)
-  resourceId  String?
+model Orders {
+  id          Int   @id @unique
+  OrderNo       String    
+  PartNo        String?
+  Product       String?
+  Quantity      Float?
+  DueDate       DateTime?
+  OpNo          Int      
+  OperationName String?
+  Resource      Resource? @relation("ResourceOrders", fields: [ResourceId], references: [id], onDelete: Cascade)
+  ResourceId    String?
+  OpTimePerItem Float?
+  SetupTime     Float?
+  SetupStart    DateTime?
+  StartTime     DateTime?
+  EndTime       DateTime?
+ 
 }
 
 model Shift {
@@ -106,3 +118,4 @@ model WeekSchedule {
   sundayShiftId    String?
   resources        Resource[] @relation("ResourceSchedule")
 }
+

@@ -33,7 +33,12 @@ import {
   updateSchedule,
 } from "./mutation/schedule.js";
 import { getGroups } from "./query/group.js";
-import { addResourceToGroup, createGroup } from "./mutation/groups.js";
+import {
+  addResourceToGroup,
+  createGroup,
+  removeResourceFromGroup,
+} from "./mutation/groups.js";
+import { getOrders, getOrdersByResourceId } from "./query/order.js";
 
 export const resolvers = {
   Query: {
@@ -64,6 +69,7 @@ export const resolvers = {
       }
       return schedule;
     },
+    getOrders: () => getOrders(),
   },
   Mutation: {
     createResource: async (_, { input }) => createResource({ input }),
@@ -99,13 +105,15 @@ export const resolvers = {
         endDate,
       });
     },
-    addResourceToGroup: async (_, { groupId, resourceId }) =>
-      addResourceToGroup({ groupId, resourceId }),
+    addResourcesToGroup: async (_, { groupId, resourceIds }) =>
+      addResourceToGroup({ groupId, resourceIds }),
     deleteBreak: async (_, { id }) => deleteBreak({ id }),
     deleteBreakFromShift: async (_, { shiftId, breakId }) =>
       deleteBreakFromShift({ shiftId, breakId }),
     deleteAlternativeShift: async (_, { id }) => deleteAlternativeShift({ id }),
     deleteSchedule: async (_, { id }) => deleteSchedule({ id }),
+    deleteResourceFromGroup: async (_, { groupId, resourceId }) =>
+      removeResourceFromGroup({ groupId, resourceId }),
   },
   Resource: {
     schedule: (resource) =>
@@ -113,12 +121,16 @@ export const resolvers = {
     alternateShifts: (resource) => getAlternateShifts(resource.id),
     restrictions: (resource) =>
       resource.restrictions ? getRestrictions(resource.id) : [],
-    orders: () => [],
+    orders: (resource) => getOrdersByResourceId(resource.id),
+    groups: (resource) => getResourcesByGroupId(resource.id),
   },
   Group: {
     resources: (group) => {
       return getResourcesByGroupId(group.id);
     },
+  },
+  Orders: {
+    Resource: (order) => getResource(order.ResourceId),
   },
   Shift: {
     startHour: (shift) => shift.startHour,

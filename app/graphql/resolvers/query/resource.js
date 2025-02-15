@@ -24,10 +24,14 @@ export const getResource = async (id) => {
 };
 
 export const getResourcesByGroupId = async (groupId) => {
-  const resources = await prisma.rEL_group_resource.findMany({
+  const relations = await prisma.rEL_group_resource.findMany({
     where: {
       groupId,
     },
+    include: {
+      resource: true,
+    },
   });
+  const resources = relations.map((relation) => relation.resource);
   return resources;
 };
