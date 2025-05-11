@@ -7,115 +7,87 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Resource {
-  id                 String                     @id @default(cuid()) // Replace cuid() with nanoid in application logic
-  name               String
-  description        String?
-  picture            String?
-  color              String?
-  scheduleId         String?
-  external_code      String?
-  schedule           WeekSchedule?              @relation("ResourceSchedule", fields: [scheduleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  alternateShifts    AlternativeShift[]
-  restrictions       REL_Restriction_Resource[] // Many-to-many via join table
-  orders             Orders[]                    @relation("ResourceOrders")
-  groups REL_group_resource[]
-}
-
-model Group {
-  id                 String               @id @default(cuid()) // Replace cuid() with nanoid in application logic
-  name               String
-  description        String?
-  resources REL_group_resource[]
-}
-
 model Orders {
-  id          Int   @id @unique
-  OrderNo       String    
-  PartNo        String?
-  Product       String?
-  Quantity      Float?
-  DueDate       DateTime?
-  OpNo          Int      
-  OperationName String?
-  Resource      Resource? @relation("ResourceOrders", fields: [ResourceId], references: [id], onDelete: Cascade)
-  ResourceId    String?
-  OpTimePerItem Float?
-  SetupTime     Float?
-  SetupStart    DateTime?
-  StartTime     DateTime?
-  EndTime       DateTime?
- 
+  id                Int     @id @default(autoincrement())
+  OrderNo           String? // Assuming OrderNo can be alphanumeric or just a number string
+  OpNo              String? // Assuming OpNo can be alphanumeric or just a number string
+  Resource          String  @unique // This is the foreign key to Resource.external_code
+  StartTime         String?
+  EndTime           String?
+  Project           String?
+  Duration          String? // Assuming duration is in some integer unit (e.g., minutes, seconds)
+  Start_min         String?
+  End_min           String?
+  TaskIndex         String?
+  PartNo            String?
+  Product           String?
+  OpName            String?
+  ResourceGroup     String?
+  RemainingQuantity String?
+  SetupTime         String? // Assuming setup time is in some integer unit
+
+  ResourceRelation Resource @relation(fields: [Resource], references: [external_code])
+
+  @@index([Resource]) // Add an index for the foreign key field
+}
+
+model Resource {
+  id             Int     @id @default(autoincrement())
+  name           String?
+  description    String?
+  picture        String? // Assuming this might be a URL or path to an image
+  color          String?
+  regularShiftId Int?
+  external_code  String  @unique // Key for relation with Orders.Resource
+
+  Orders            Orders? // One-to-one relation from Resource back to Orders
+  Shift             Shift?             @relation(fields: [regularShiftId], references: [id])
+  AlternativeShifts AlternativeShift[]
+
+  @@index([regularShiftId])
 }
 
 model Shift {
-  id              String             @id @default(cuid()) // Replace cuid() with nanoid in application logic
-  name            String
-  startHour       String
-  endHour         String
-  alternateShifts AlternativeShift[]
-  breaks          REL_Break_Shift[] // Many-to-many via join table
+  id                Int                @id @default(autoincrement())
+  name              String?
+  startHour         String? // Consider DateTime or Int if you store specific times or hour numbers
+  endHour           String? // Consider DateTime or Int
+  Resources         Resource[]
+  RelBreakShifts    REL_Break_Shift[]
+  AlternativeShifts AlternativeShift[]
 }
 
 model Break {
-  id        String            @id @default(cuid())
-  name      String
-  startHour String
-  endHour   String
-  shifts    REL_Break_Shift[] // Many-to-many via join table
-}
-
-model Restriction {
-  id          String                     @id @default(cuid()) // Replace cuid() with nanoid in application logic
-  name        String
-  description String?
-  resources   REL_Restriction_Resource[]
-}
-
-model REL_group_resource {
-  id         String   @id @default(cuid())
-  group      Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId    String
-  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  resourceId String
-}
-
-model REL_Restriction_Resource {
-  id            String      @id @default(cuid())
-  resource      Resource    @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  resourceId    String
-  restriction   Restriction @relation(fields: [restrictionId], references: [id], onDelete: Cascade)
-  restrictionId String
-}
-
-model AlternativeShift {
-  id         String   @id @default(cuid()) // Replace cuid() with nanoid in application logic
-  shift      Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
-  shiftId    String
-  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  resourceId String
-  startDate  String
-  endDate    String
+  id             Int               @id @default(autoincrement())
+  name           String?
+  startHour      String? // Consider DateTime or Int
+  endHour        String? // Consider DateTime or Int
+  RelBreakShifts REL_Break_Shift[]
 }
 
 model REL_Break_Shift {
-  id      String @id @default(cuid())
-  shift   Shift  @relation(fields: [shiftId], references: [id], onDelete: Cascade)
-  shiftId String
-  break   Break  @relation(fields: [breakId], references: [id], onDelete: Cascade)
-  breakId String
+  id      Int @id @default(autoincrement())
+  shiftId Int
+  breakId Int
+
+  Shift Shift @relation(fields: [shiftId], references: [id])
+  Break Break @relation(fields: [breakId], references: [id])
+
+  @@unique([shiftId, breakId]) // Assuming a break can only be associated with a shift once
+  @@index([shiftId])
+  @@index([breakId])
 }
 
-model WeekSchedule {
-  id               String     @id @default(cuid()) // Replace cuid() with nanoid in application logic
-  name             String     @unique
-  mondayShiftId    String?
-  tuesdayShiftId   String?
-  wednesdayShiftId String?
-  thursdayShiftId  String?
-  fridayShiftId    String?
-  saturdayShiftId  String?
-  sundayShiftId    String?
-  resources        Resource[] @relation("ResourceSchedule")
-}
+model AlternativeShift {
+  id         Int       @id @default(autoincrement())
+  shiftId    Int
+  resourceId Int
+  startDate  DateTime?
+  endDate    DateTime?
 
+  Shift    Shift    @relation(fields: [shiftId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  Resource Resource @relation(fields: [resourceId], references: [id])
+
+  @@index([shiftId])
+  @@index([resourceId])
+}

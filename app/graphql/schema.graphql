@@ -63,19 +63,22 @@ type Group {
 
 type Orders {
   id: ID!
-  OrderNo: String!
-  OpNo: Int
-  Resource: Resource
-  DueDate: String
-  OperationName: String
-  SetupTime: Float
-  OpTimePerItem: Float
-  SetupStart: String
+  OrderNo: String
+  OpNo: String
+  Resource: String
   StartTime: String
   EndTime: String
+  Project: String
+  Duration: String
+  Start_min: String
+  End_min: String
+  TaskIndex: String
   PartNo: String
   Product: String
-  Quantity: Float
+  OpName: String
+  ResourceGroup: String
+  RemainingQuantity: String
+  SetupTime: String
 }
 
 type Shift {
