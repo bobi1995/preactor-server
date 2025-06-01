@@ -1,154 +1,286 @@
+## GraphQL Schema (Complete)
+
+scalar DateTime # Assuming you have a DateTime scalar for ISO date strings
 type Query {
   hello: String
-  getResources: [Resource]
-  getResource(id: ID!): Resource
-  getGroups: [Group]
-  getShifts: [Shift]
-  getShift(id: ID!): Shift
-  getBreaks: [Break]
-  getSchedules: [WeekSchedule]
-  getSchedule(id: ID!): WeekSchedule
+
+  # Resource Queries
+  getResources: [Resources]
+  getResource(id: ID!): Resources
+
+  # ResourceGroup Queries
+  # getResourceGroups: [ResourceGroup]
+  # getResourceGroup(id: ID!): ResourceGroup
+
+  # Shift Queries
+  getShifts: [Shifts]
+  getShift(id: ID!): Shifts
+
+  # Break Queries
+  getBreaks: [Breaks] # Assuming you want to query all available breaks
+  # WeekSchedule Queries
+  getSchedules: [WeekSchedules]
+  getSchedule(id: ID!): WeekSchedules
+
+  # Orders Queries
   getOrders: [Orders]
+
+  # AlternativeShift Queries (Example - if needed)
+  # getAlternativeShiftsForResource(resourceId: ID!): [AlternativeShift]
 }
 
 type Mutation {
-  createResource(input: ResourceInput!): Resource
-  createGroup(name: String!, description: String): Group
-  createShift(input: ShiftInput!): Shift
-  createBreak(input: BreakInput!): Break
-  createSchedule(name: String!): WeekSchedule
-  updateSchedule(id: ID!, input: WeekScheduleInput!): WeekSchedule
-  assignBreakToShift(shiftId: ID!, breakId: ID!): Shift
-  assignSchedule(resourceId: ID!, scheduleId: ID!): Resource
-  assignAlternativeShiftToResource(
+  # Resource Mutations
+  createResource(input: ResourceInput!): Resources
+  updateResource(id: ID!, input: UpdateResourceInput!): Resources # Added update mutation
+  deleteResource(id: ID!): SuccessMessage # Or return Resource
+  # ResourceGroup Mutations
+  createResourceGroup(input: ResourceGroupInput!): ResourceGroup
+  updateResourceGroup(id: ID!, input: UpdateResourceGroupInput!): ResourceGroup
+  deleteResourceGroup(id: ID!): SuccessMessage # Or return ResourceGroup
+  addResourceToGroup(
     resourceId: ID!
-    shiftId: ID!
-    startDate: String
-    endDate: String
-  ): AlternativeShift
-  assignMassiveAlternative(
-    resourceIds: [ID!]!
-    shiftId: ID!
-    startDate: String
-    endDate: String
-  ): Shift
-  addResourcesToGroup(groupId: ID!, resourceIds: [ID!]): String
-  deleteBreak(id: ID!): Break
-  deleteBreakFromShift(shiftId: ID!, breakId: ID!): Shift
-  deleteAlternativeShift(id: ID!): AlternativeShift
-  deleteSchedule(id: ID!): WeekSchedule
-  deleteResourceFromGroup(groupId: ID!, resourceId: ID!): String
+    resourceGroupId: ID!
+  ): REL_Resource_Group_Payload # Creates link in REL_Resource_Group
+  removeResourceFromGroup(resourceId: ID!, resourceGroupId: ID!): SuccessMessage # Deletes link from REL_Resource_Group
+  # Shift Mutations
+  createShift(input: ShiftInput!): Shifts
+  updateShift(id: ID!, input: UpdateShiftInput!): Shifts # Added update mutation
+  deleteShift(id: ID!): SuccessMessage # Or return Shift
+  # Break Mutations
+  createBreak(input: BreakInput!): Breaks
+  updateBreak(id: ID!, input: UpdateBreakInput!): Breaks # Added update mutation
+  deleteBreak(id: ID!): SuccessMessage # Or return Break
+  assignBreakToShift(shiftId: ID!, breakId: ID!): Shifts # Manages REL_Break_Shift or implicit M2M
+  removeBreakFromShift(shiftId: ID!, breakId: ID!): Shifts # Manages REL_Break_Shift or implicit M2M
+  # WeekSchedule Mutations
+  createSchedule(input: CreateWeekScheduleInput!): WeekSchedules
+  updateSchedule(id: ID!, input: UpdateWeekScheduleInput!): WeekSchedules
+  deleteSchedule(id: ID!): SuccessMessage # Or return WeekSchedule
+  assignScheduleToResource(resourceId: ID!, scheduleId: ID!): Resources # Updates Resource.weekScheduleId
+  # AlternativeShift Mutations
+  assignAlternativeShiftToResource(
+    input: AssignAlternativeShiftInput!
+  ): AlternativeShifts
+  updateAlternativeShift(
+    id: ID!
+    input: UpdateAlternativeShiftInput!
+  ): AlternativeShifts # Added update
+  deleteAlternativeShift(id: ID!): SuccessMessage # Or return AlternativeShift
+  assignMassiveAlternativeShiftToResources(
+    input: AssignMassiveAlternativeShiftInput!
+  ): [AlternativeShifts]
+
+  # Orders Mutations (Example - if you manage orders via this API)
+  # createOrder(input: CreateOrderInput!): Orders
+  # updateOrder(id: ID!, input: UpdateOrderInput!): Orders
+  # deleteOrder(id: ID!): SuccessMessage
 }
 
-type Resource {
+# --- Main Data Types ---
+
+type Resources {
   id: ID!
-  name: String!
+  name: String
   description: String
   color: String
-  picture: String
-  external_code: String
+  picture: String # Prisma Bytes? can be represented as a base64 String
+  external_code: String!
+  regularShift: Shifts # Populated via regularShiftId
+  weekSchedule: WeekSchedules # Populated via weekScheduleId
+  alternativeShifts: [AlternativeShifts]
+  resourceGroups: [ResourceGroup] # Resources can be in multiple groups
   orders: [Orders]
-  schedule: WeekSchedule
-  alternateShifts: [AlternativeShift]
-  restrictions: [Restriction]
-  groups: [Group]
+  # resourceChangeoverGroups: [REL_Resource_Changeover_Group_Payload] # If you need to expose this explicitly
 }
 
-type Group {
+type ResourceGroup {
   id: ID!
   name: String!
   description: String
-  resources: [Resource]
+  resources: [Resources] # Resources belonging to this group
+}
+
+# Join table payload for Resource <-> ResourceGroup (if needed, e.g., for createdAt)
+type REL_Resource_Group_Payload {
+  resource: Resources!
+  resourceGroup: ResourceGroup!
+  createdAt: DateTime! # Assuming DateTime scalar for ISO strings
+}
+
+type Shifts { # Renamed from Shift to Shifts for consistency with Prisma model name
+  id: ID!
+  name: String
+  startHour: String # e.g., "08:00"
+  endHour: String # e.g., "17:00"
+  breaks: [Breaks] # Populated via (implicit or explicit) join table
+}
+
+type Breaks { # Renamed from Break to Breaks for consistency
+  id: ID!
+  name: String
+  startHour: String
+  endHour: String
+  shifts: [Shifts] # If you want to navigate from Break to Shifts
+}
+
+type WeekSchedules { # Renamed from WeekSchedule to WeekSchedules
+  id: ID!
+  name: String
+  monday: Shifts
+  tuesday: Shifts
+  wednesday: Shifts
+  thursday: Shifts
+  friday: Shifts
+  saturday: Shifts
+  sunday: Shifts
+  resources: [Resources] # Resources using this schedule
+}
+
+type AlternativeShifts { # Renamed from AlternativeShift to AlternativeShifts
+  id: ID!
+  shift: Shifts! # Assuming a shift is mandatory for an alternative shift record
+  resource: Resources!
+  startDate: DateTime! # Assuming DateTime scalar
+  endDate: DateTime! # Assuming DateTime scalar
 }
 
 type Orders {
   id: ID!
   OrderNo: String
   OpNo: String
-  Resource: String
-  StartTime: String
-  EndTime: String
+  ResourceExternalCode: String
+  # resource: Resource # Could resolve Resource object from ResourceExternalCode
+  StartTime: DateTime # Prisma DateTime?
+  EndTime: DateTime # Prisma DateTime?
   Project: String
-  Duration: String
-  Start_min: String
-  End_min: String
+  Duration: Int # Prisma Int?
+  Start_min: Int # Prisma Int?
+  End_min: Int # Prisma Int?
   TaskIndex: String
   PartNo: String
   Product: String
   OpName: String
-  ResourceGroup: String
-  RemainingQuantity: String
-  SetupTime: String
+  ResourceGroup: String # This is a string field in Orders, distinct from the ResourceGroup model
+  RemainingQuantity: Float # Prisma Float?
+  SetupTime: Int # Prisma Int?
 }
 
-type Shift {
-  id: ID!
-  name: String!
-  startHour: String!
-  endHour: String!
-  breaks: [Break]
+# --- Utility Types ---
+type SuccessMessage {
+  success: Boolean!
+  message: String
 }
 
-type WeekSchedule {
-  id: ID!
-  name: String!
-  monday: Shift
-  tuesday: Shift
-  wednesday: Shift
-  thursday: Shift
-  friday: Shift
-  saturday: Shift
-  sunday: Shift
-}
-
-type AlternativeShift {
-  id: ID!
-  shiftId: ID!
-  shift: Shift
-  resourceId: Resource!
-  startDate: String!
-  endDate: String!
-}
-type Restriction {
-  id: ID!
-  name: String!
-  description: String
-}
-
-type Break {
-  id: ID!
-  name: String!
-  startHour: String!
-  endHour: String!
-}
+# --- Input Types ---
 
 input ResourceInput {
-  name: String!
+  name: String
+  description: String
+  color: String
+  picture: String # Base64 string for Bytes
+  external_code: String!
+  regularShiftId: ID
+  weekScheduleId: ID
+  # For M2M ResourceGroup assignment, use addResourceToGroup mutation
+  # or accept an array of group IDs here if preferred:
+  # resourceGroupIdsToConnect: [ID!]
+}
+
+input UpdateResourceInput {
+  name: String
   description: String
   color: String
   picture: String
+  external_code: String
   regularShiftId: ID
+  weekScheduleId: ID
+  # resourceGroupIdsToConnect: [ID!]
+  # resourceGroupIdsToDisconnect: [ID!]
 }
 
-input ShiftInput {
+input ResourceGroupInput {
   name: String!
-  startHour: String!
-  endHour: String!
+  description: String
 }
 
-input BreakInput {
-  name: String!
-  startHour: String!
-  endHour: String!
+input UpdateResourceGroupInput {
+  name: String
+  description: String
 }
 
-input WeekScheduleInput {
-  name: String!
-  mondayShiftId: String
-  tuesdayShiftId: String
-  wednesdayShiftId: String
-  thursdayShiftId: String
-  fridayShiftId: String
-  saturdayShiftId: String
-  sundayShiftId: String
+input ShiftInput { # For create
+  name: String
+  startHour: String # e.g., "08:00"
+  endHour: String # e.g., "17:00"
 }
+
+input UpdateShiftInput { # For update
+  name: String
+  startHour: String
+  endHour: String
+}
+
+input BreakInput { # For create
+  name: String
+  startHour: String
+  endHour: String
+}
+
+input UpdateBreakInput { # For update
+  name: String
+  startHour: String
+  endHour: String
+}
+
+input CreateWeekScheduleInput {
+  name: String!
+  mondayId: ID
+  tuesdayId: ID
+  wednesdayId: ID
+  thursdayId: ID
+  fridayId: ID
+  saturdayId: ID
+  sundayId: ID
+}
+
+input UpdateWeekScheduleInput {
+  name: String
+  mondayId: ID
+  tuesdayId: ID
+  wednesdayId: ID
+  thursdayId: ID
+  fridayId: ID
+  saturdayId: ID
+  sundayId: ID
+}
+
+input AssignAlternativeShiftInput {
+  resourceId: ID!
+  shiftId: ID!
+  startDate: DateTime!
+  endDate: DateTime!
+}
+
+input UpdateAlternativeShiftInput {
+  shiftId: ID
+  startDate: DateTime
+  endDate: DateTime
+}
+
+input AssignMassiveAlternativeShiftInput {
+  resourceIds: [ID!]!
+  shiftId: ID!
+  startDate: DateTime!
+  endDate: DateTime!
+}
+
+# Example Inputs for Orders (if you add Order mutations)
+# input CreateOrderInput { ... }
+# input UpdateOrderInput { ... }
+
+# Note on Prisma models not explicitly typed in GQL (unless via Payloads):
+# - Attribute, AttributeParameter, ChangeoverGroup, ChangeoverData,
+# - REL_Resource_Changeover_Group
+# - REL_Break_Shift (if you kept it explicit, otherwise it's implicit via Shift.breaks)
+# If direct GQL interaction is needed for these, corresponding types, queries, and mutations would be added.

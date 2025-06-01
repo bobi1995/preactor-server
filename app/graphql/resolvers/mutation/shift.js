@@ -1,7 +1,7 @@
 import prisma from "../../../../prisma/prismaClient.js";
 
 export const createShift = async ({ input }) => {
-  const shift = await prisma.shift.create({
+  const shift = await prisma.shifts.create({
     data: {
       name: input.name,
       startHour: input.startHour,
@@ -12,7 +12,7 @@ export const createShift = async ({ input }) => {
 };
 
 export const createBreak = async ({ input }) => {
-  const newBreak = await prisma.break.create({
+  const newBreak = await prisma.breaks.create({
     data: {
       name: input.name,
       startHour: input.startHour,
@@ -25,8 +25,8 @@ export const createBreak = async ({ input }) => {
 export const assignBreakToShift = async ({ shiftId, breakId }) => {
   const shiftBreak = await prisma.rEL_Break_Shift.create({
     data: {
-      shiftId,
-      breakId,
+      shiftId: parseInt(shiftId),
+      breakId: parseInt(breakId),
     },
   });
   return shiftBreak;
@@ -38,7 +38,7 @@ export const deleteBreak = async ({ id }) => {
       breakId: id,
     },
   });
-  const deletedBreak = await prisma.break.delete({
+  const deletedBreak = await prisma.breaks.delete({
     where: {
       id,
     },

@@ -9,7 +9,7 @@ export const getSchedules = async () => {
 export const getScheduleById = async (id) => {
   const schedule = await prisma.weekSchedule.findUnique({
     where: {
-      id,
+      id: parseInt(id),
     },
   });
   return schedule;

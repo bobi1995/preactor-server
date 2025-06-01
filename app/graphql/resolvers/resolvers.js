@@ -51,7 +51,7 @@ export const resolvers = {
       }
       return resource;
     },
-    getGroups: () => getGroups(),
+    //getGroups: () => getGroups(),
     getShifts: () => getShifts(),
     getShift: async (_, { id }) => {
       const shift = await getShiftById(id);
@@ -73,89 +73,84 @@ export const resolvers = {
   },
   Mutation: {
     createResource: async (_, { input }) => createResource({ input }),
-    createGroup: async (_, { name, description }) =>
-      createGroup({ name, description }),
+    // createGroup: async (_, { name, description }) =>
+    // createGroup({ name, description }),
     createShift: async (_, { input }) => createShift({ input }),
     createBreak: async (_, { input }) => createBreak({ input }),
     createSchedule: async (_, { name }) => createSchedule({ name }),
     updateSchedule: async (_, { id, input }) => updateSchedule({ id, input }),
     assignBreakToShift: async (_, { shiftId, breakId }) =>
       assignBreakToShift({ shiftId, breakId }),
-    assignSchedule: async (_, { resourceId, scheduleId }) =>
-      assignSchedule({ resourceId, scheduleId }),
-    assignAlternativeShiftToResource: async (
-      _,
-      { resourceId, shiftId, startDate, endDate }
-    ) => {
-      return assignAlternativeShift({
-        resourceId,
-        shiftId,
-        startDate,
-        endDate,
-      });
-    },
-    assignMassiveAlternative: async (
-      _,
-      { resourceIds, shiftId, startDate, endDate }
-    ) => {
-      return assignMassiveAlternative({
-        resourceIds,
-        shiftId,
-        startDate,
-        endDate,
-      });
-    },
-    addResourcesToGroup: async (_, { groupId, resourceIds }) =>
-      addResourceToGroup({ groupId, resourceIds }),
+    // assignSchedule: async (_, { resourceId, scheduleId }) =>
+    //   assignSchedule({ resourceId, scheduleId }),
+    // assignAlternativeShiftToResource: async (
+    //   _,
+    //   { resourceId, shiftId, startDate, endDate }
+    // ) => {
+    //   return assignAlternativeShift({
+    //     resourceId,
+    //     shiftId,
+    //     startDate,
+    //     endDate,
+    //   });
+    // },
+    // assignMassiveAlternative: async (
+    //   _,
+    //   { resourceIds, shiftId, startDate, endDate }
+    // ) => {
+    //   return assignMassiveAlternative({
+    //     resourceIds,
+    //     shiftId,
+    //     startDate,
+    //     endDate,
+    //   });
+    // },
+    // addResourcesToGroup: async (_, { groupId, resourceIds }) =>
+    //   addResourceToGroup({ groupId, resourceIds }),
     deleteBreak: async (_, { id }) => deleteBreak({ id }),
-    deleteBreakFromShift: async (_, { shiftId, breakId }) =>
-      deleteBreakFromShift({ shiftId, breakId }),
+    // deleteBreakFromShift: async (_, { shiftId, breakId }) =>
+    //   deleteBreakFromShift({ shiftId, breakId }),
     deleteAlternativeShift: async (_, { id }) => deleteAlternativeShift({ id }),
     deleteSchedule: async (_, { id }) => deleteSchedule({ id }),
-    deleteResourceFromGroup: async (_, { groupId, resourceId }) =>
-      removeResourceFromGroup({ groupId, resourceId }),
+    // deleteResourceFromGroup: async (_, { groupId, resourceId }) =>
+    //   removeResourceFromGroup({ groupId, resourceId }),
   },
-  Resource: {
-    schedule: (resource) =>
+  Resources: {
+    weekSchedule: (resource) =>
       resource.scheduleId ? getScheduleById(resource.scheduleId) : null,
-    alternateShifts: (resource) => getAlternateShifts(resource.id),
-    restrictions: (resource) =>
-      resource.restrictions ? getRestrictions(resource.id) : [],
+    alternativeShifts: (resource) => getAlternateShifts(resource.id),
     orders: (resource) => getOrdersByResourceId(resource.id),
-    groups: (resource) => getResourcesByGroupId(resource.id),
+    // groups: (resource) => getResourcesByGroupId(resource.id),
+    regularShift: (resource) =>
+      resource.regularShiftId ? getShiftById(resource.regularShiftId) : null,
   },
-  Group: {
-    resources: (group) => {
-      return getResourcesByGroupId(group.id);
-    },
-  },
-  Orders: {
-    Resource: (order) => getResource(order.ResourceId),
-  },
-  Shift: {
+  // Group: {
+  //   resources: (group) => {
+  //     return getResourcesByGroupId(group.id);
+  //   },
+  // },
+  Shifts: {
     startHour: (shift) => shift.startHour,
     endHour: (shift) => shift.endHour,
     breaks: (shift) => getShiftBreaks(shift.id),
   },
-  WeekSchedule: {
+  WeekSchedules: {
     monday: (schedule) =>
-      schedule.mondayShiftId ? getShiftById(schedule.mondayShiftId) : null,
+      schedule.monday ? getShiftById(schedule.monday) : null,
     tuesday: (schedule) =>
-      schedule.tuesdayShiftId ? getShiftById(schedule.tuesdayShiftId) : null,
+      schedule.tuesday ? getShiftById(schedule.tuesday) : null,
     wednesday: (schedule) =>
-      schedule.wednesdayShiftId
-        ? getShiftById(schedule.wednesdayShiftId)
-        : null,
+      schedule.wednesday ? getShiftById(schedule.wednesday) : null,
     thursday: (schedule) =>
-      schedule.thursdayShiftId ? getShiftById(schedule.thursdayShiftId) : null,
+      schedule.thursday ? getShiftById(schedule.thursday) : null,
     friday: (schedule) =>
-      schedule.fridayShiftId ? getShiftById(schedule.fridayShiftId) : null,
+      schedule.friday ? getShiftById(schedule.friday) : null,
     saturday: (schedule) =>
-      schedule.saturdayShiftId ? getShiftById(schedule.saturdayShiftId) : null,
+      schedule.saturday ? getShiftById(schedule.saturday) : null,
     sunday: (schedule) =>
-      schedule.sundayShiftId ? getShiftById(schedule.sundayShiftId) : null,
+      schedule.sunday ? getShiftById(schedule.sunday) : null,
   },
-  Break: {
+  Breaks: {
     startHour: (shift) => shift.startHour,
     endHour: (shift) => shift.endHour,
   },

@@ -1,12 +1,17 @@
 import prisma from "../../../../prisma/prismaClient.js";
 
 export const getResources = async () => {
-  const resources = await prisma.resource.findMany();
-  return resources;
+  try {
+    const resources = await prisma.resources.findMany();
+    return resources;
+  } catch (error) {
+    console.error("Error fetching resources:", error);
+    throw new Error("Failed to fetch resources");
+  }
 };
 
 export const getResourcesByRegularShiftId = async (regularShiftId) => {
-  const resource = await prisma.resource.findMany({
+  const resource = await prisma.resources.findMany({
     where: {
       regularShiftId,
     },
@@ -15,7 +20,7 @@ export const getResourcesByRegularShiftId = async (regularShiftId) => {
 };
 
 export const getResource = async (id) => {
-  const resource = await prisma.resource.findUnique({
+  const resource = await prisma.resources.findUnique({
     where: {
       id,
     },

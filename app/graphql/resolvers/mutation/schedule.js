@@ -10,8 +10,9 @@ export const createSchedule = async ({ name }) => {
 };
 
 export const updateSchedule = async ({ id, input }) => {
+  console.log("updateSchedule", id, input);
   const schedule = await prisma.weekSchedule.update({
-    where: { id },
+    where: { id: parseInt(id) },
     data: {
       ...input,
     },

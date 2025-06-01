@@ -7,62 +7,79 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Orders {
-  id                Int     @id @default(autoincrement())
-  OrderNo           String? // Assuming OrderNo can be alphanumeric or just a number string
-  OpNo              String? // Assuming OpNo can be alphanumeric or just a number string
-  Resource          String  @unique // This is the foreign key to Resource.external_code
-  StartTime         String?
-  EndTime           String?
-  Project           String?
-  Duration          String? // Assuming duration is in some integer unit (e.g., minutes, seconds)
-  Start_min         String?
-  End_min           String?
-  TaskIndex         String?
-  PartNo            String?
-  Product           String?
-  OpName            String?
-  ResourceGroup     String?
-  RemainingQuantity String?
-  SetupTime         String? // Assuming setup time is in some integer unit
-
-  ResourceRelation Resource @relation(fields: [Resource], references: [external_code])
-
-  @@index([Resource]) // Add an index for the foreign key field
+// --------------------------------------------------
+// Resources and Scheduling
+// --------------------------------------------------
+model ResourceGroup {
+  id                  Int                  @id @default(autoincrement())
+  name                String               @unique // e.g., "Lasers", "Bending Machines"
+  description         String?
+  resourceAssignments REL_Resource_Group[] // Relation to the join table
 }
 
-model Resource {
+model Resources {
   id             Int     @id @default(autoincrement())
   name           String?
   description    String?
-  picture        String? // Assuming this might be a URL or path to an image
+  picture        Bytes?
   color          String?
   regularShiftId Int?
-  external_code  String  @unique // Key for relation with Orders.Resource
+  external_code  String  @unique
+  weekScheduleId Int?
 
-  Orders            Orders? // One-to-one relation from Resource back to Orders
-  Shift             Shift?             @relation(fields: [regularShiftId], references: [id])
-  AlternativeShifts AlternativeShift[]
+  regularShift             Shifts?              @relation("RegularShift", fields: [regularShiftId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  alternativeShifts        AlternativeShifts[]
+  weekSchedule             WeekSchedules?       @relation(fields: [weekScheduleId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  resourceGroupAssignments REL_Resource_Group[] // Relation to the join table
+
+  resourceChangeoverGroups REL_Resource_Changeover_Group[]
+  orders                   Orders[]                        @relation("ResourceOrders")
 
   @@index([regularShiftId])
+  @@index([weekScheduleId])
+  @@index([external_code])
 }
 
-model Shift {
-  id                Int                @id @default(autoincrement())
-  name              String?
-  startHour         String? // Consider DateTime or Int if you store specific times or hour numbers
-  endHour           String? // Consider DateTime or Int
-  Resources         Resource[]
-  RelBreakShifts    REL_Break_Shift[]
-  AlternativeShifts AlternativeShift[]
+// New explicit join table for Resource and ResourceGroup
+model REL_Resource_Group {
+  resourceId      Int
+  resourceGroupId Int
+
+  resource      Resources     @relation(fields: [resourceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  resourceGroup ResourceGroup @relation(fields: [resourceGroupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  createdAt DateTime @default(now()) // Optional: timestamp for when the assignment was made
+
+  @@id([resourceId, resourceGroupId]) // Composite primary key
+  @@index([resourceGroupId]) // Index for faster lookups by group
 }
 
-model Break {
-  id             Int               @id @default(autoincrement())
-  name           String?
-  startHour      String? // Consider DateTime or Int
-  endHour        String? // Consider DateTime or Int
-  RelBreakShifts REL_Break_Shift[]
+model Shifts {
+  id        Int     @id @default(autoincrement())
+  name      String? @unique // e.g., "Morning Shift", "Night Shift"
+  startHour String? // Consider storing as "HH:mm" or Int (minutes from midnight)
+  endHour   String? // Consider storing as "HH:mm" or Int (minutes from midnight)
+
+  regularResources  Resources[]         @relation("RegularShift")
+  relBreakShifts    REL_Break_Shift[]
+  alternativeShifts AlternativeShifts[]
+
+  mondaySchedules    WeekSchedules[] @relation("MondayShift")
+  tuesdaySchedules   WeekSchedules[] @relation("TuesdayShift")
+  wednesdaySchedules WeekSchedules[] @relation("WednesdayShift")
+  thursdaySchedules  WeekSchedules[] @relation("ThursdayShift")
+  fridaySchedules    WeekSchedules[] @relation("FridayShift")
+  saturdaySchedules  WeekSchedules[] @relation("SaturdayShift")
+  sundaySchedules    WeekSchedules[] @relation("SundayShift")
+}
+
+model Breaks {
+  id        Int     @id @default(autoincrement())
+  name      String? @unique // e.g., "Lunch Break"
+  startHour String? // "HH:mm"
+  endHour   String? // "HH:mm"
+
+  relBreakShifts REL_Break_Shift[]
 }
 
 model REL_Break_Shift {
@@ -70,24 +87,151 @@ model REL_Break_Shift {
   shiftId Int
   breakId Int
 
-  Shift Shift @relation(fields: [shiftId], references: [id])
-  Break Break @relation(fields: [breakId], references: [id])
+  shift Shifts @relation(fields: [shiftId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  break Breaks @relation(fields: [breakId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@unique([shiftId, breakId]) // Assuming a break can only be associated with a shift once
+  @@unique([shiftId, breakId])
   @@index([shiftId])
   @@index([breakId])
 }
 
-model AlternativeShift {
-  id         Int       @id @default(autoincrement())
+model WeekSchedules {
+  id   Int     @id @default(autoincrement())
+  name String? @unique // e.g., "Standard Week", "Summer Schedule"
+
+  mondayId    Int?
+  tuesdayId   Int?
+  wednesdayId Int?
+  thursdayId  Int?
+  fridayId    Int?
+  saturdayId  Int?
+  sundayId    Int?
+
+  // MODIFIED DAILY SHIFT RELATIONS TO BREAK CYCLE:
+  mondayShift    Shifts? @relation("MondayShift", fields: [mondayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tuesdayShift   Shifts? @relation("TuesdayShift", fields: [tuesdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  wednesdayShift Shifts? @relation("WednesdayShift", fields: [wednesdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  thursdayShift  Shifts? @relation("ThursdayShift", fields: [thursdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fridayShift    Shifts? @relation("FridayShift", fields: [fridayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  saturdayShift  Shifts? @relation("SaturdayShift", fields: [saturdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sundayShift    Shifts? @relation("SundayShift", fields: [sundayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  resources Resources[]
+
+  @@index([mondayId])
+  @@index([tuesdayId])
+  @@index([wednesdayId])
+  @@index([thursdayId])
+  @@index([fridayId])
+  @@index([saturdayId])
+  @@index([sundayId])
+}
+
+model AlternativeShifts {
+  id         Int      @id @default(autoincrement())
   shiftId    Int
   resourceId Int
-  startDate  DateTime?
-  endDate    DateTime?
+  startDate  DateTime
+  endDate    DateTime
 
-  Shift    Shift    @relation(fields: [shiftId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  Resource Resource @relation(fields: [resourceId], references: [id])
+  shift    Shifts    @relation(fields: [shiftId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  resource Resources @relation(fields: [resourceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
+  @@unique([resourceId, shiftId, startDate])
   @@index([shiftId])
   @@index([resourceId])
+}
+
+// --------------------------------------------------
+// Attributes and Changeovers
+// --------------------------------------------------
+
+model Attribute {
+  id                  Int                  @id @default(autoincrement())
+  name                String               @unique
+  attributeParameters AttributeParameter[]
+  changeoverData      ChangeoverData[]
+}
+
+model AttributeParameter {
+  id             Int    @id @default(autoincrement())
+  attributeId    Int
+  attributeValue String
+
+  attribute       Attribute        @relation(fields: [attributeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  fromChangeovers ChangeoverData[] @relation("FromParameter")
+  toChangeovers   ChangeoverData[] @relation("ToParameter")
+
+  @@unique([attributeId, attributeValue])
+  @@index([attributeId])
+}
+
+model ChangeoverGroup {
+  id                       Int                             @id @default(autoincrement())
+  name                     String                          @unique
+  changeoverData           ChangeoverData[]
+  resourceChangeoverGroups REL_Resource_Changeover_Group[]
+}
+
+model ChangeoverData {
+  id                Int   @id @default(autoincrement())
+  attributeId       Int // The attribute being changed (e.g., ID for "Color")
+  changeoverGroupId Int // The group this changeover belongs to
+  fromAttrParamId   Int // FK to AttributeParameter (e.g., ID for "Black")
+  toAttrParamId     Int // FK to AttributeParameter (e.g., ID for "White")
+  setupTime         Float // Time required for this changeover
+
+  // MODIFIED RELATION TO BREAK CYCLE:
+  attribute Attribute @relation(fields: [attributeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  changeoverGroup    ChangeoverGroup    @relation(fields: [changeoverGroupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  fromAttributeParam AttributeParameter @relation("FromParameter", fields: [fromAttrParamId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  toAttributeParam   AttributeParameter @relation("ToParameter", fields: [toAttrParamId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([attributeId])
+  @@index([changeoverGroupId])
+  @@index([fromAttrParamId])
+  @@index([toAttrParamId])
+}
+
+model REL_Resource_Changeover_Group {
+  id                Int     @id @default(autoincrement())
+  resourceId        Int
+  changeoverGroupId Int
+  accumulative      Boolean
+
+  resource        Resources       @relation(fields: [resourceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  changeoverGroup ChangeoverGroup @relation(fields: [changeoverGroupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([resourceId, changeoverGroupId])
+  @@index([resourceId])
+  @@index([changeoverGroupId])
+}
+
+// --------------------------------------------------
+// Orders (from your initial schema, with refinements)
+// --------------------------------------------------
+
+model Orders {
+  id                   Int       @id @default(autoincrement())
+  OrderNo              String?
+  OpNo                 String?
+  ResourceExternalCode String
+  StartTime            DateTime?
+  EndTime              DateTime?
+  Project              String?
+  Duration             Int?
+  Start_min            Int?
+  End_min              Int?
+  TaskIndex            String?
+  PartNo               String?
+  Product              String?
+  OpName               String?
+  ResourceGroup        String?
+  RemainingQuantity    Float?
+  SetupTime            Int?
+
+  resource Resources @relation("ResourceOrders", fields: [ResourceExternalCode], references: [external_code], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([ResourceExternalCode])
 }
