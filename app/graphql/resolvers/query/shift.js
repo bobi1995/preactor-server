@@ -22,7 +22,7 @@ export const getShiftById = async (id) => {
   return shift;
 };
 
-export const getAlternateShifts = async (resourceId) => {
+export const getAlternativeShifts = async (resourceId) => {
   const shifts = await prisma.alternativeShifts.findMany({
     where: {
       resourceId,
