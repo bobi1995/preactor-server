@@ -1,80 +1,269 @@
-generator client {
-  provider = "prisma-client-js"
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// -------------------------------------------------------------
+// | Provider & Generator Configuration                        |
+// -------------------------------------------------------------
 
 datasource db {
   provider = "sqlserver"
   url      = env("DATABASE_URL")
 }
 
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+// -------------------------------------------------------------
+// | Resource & Scheduling Models                              |
+// -------------------------------------------------------------
+
+// Represents a resource, like a machine, in the factory.
 model Resource {
-  id              String                     @id @default(cuid()) // Replace cuid() with nanoid in application logic
-  name            String
-  description     String?
-  picture         String?
-  color           String?
-  regularShiftId  String?
-  external_code   String?
-  regularShift    Shift?                     @relation("ResourceRegularShift", fields: [regularShiftId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  alternateShifts AlternativeShift[]
-  restrictions    REL_Restriction_Resource[] // Many-to-many via join table
-  orders          Order[]                    @relation("ResourceOrders")
+  id                Int      @id @default(autoincrement())
+  name              String
+  description       String?
+  picture           String?
+  color             String?
+  externalCode      String   @unique @map("external_code")
+  accumulative      Boolean?
+
+  // --- Relations ---
+  // CORRECTED: Added referential actions to prevent cycles.
+  regularShiftId    Int?     @map("regular_shift_id")
+  regularShift      Shift?   @relation("RegularShift", fields: [regularShiftId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  scheduleId        Int?     @map("schedule_id")
+  schedule          Schedule? @relation(fields: [scheduleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  changeoverGroupId Int?     @map("changeover_group_id")
+  changeoverGroup   ChangeoverGroup? @relation(fields: [changeoverGroupId], references: [id])
+
+  alternativeShifts AlternativeShift[]
+  orders            Order[]
+  
+  resourceGroupLinks ResourceToGroup[]
+
+  @@map("Resources")
 }
 
-model Order {
-  id          String    @id @default(cuid()) // Replace cuid() with nanoid in application logic
-  orderNumber String
-  resource    Resource? @relation("ResourceOrders", fields: [resourceId], references: [id], onDelete: Cascade)
-  resourceId  String?
+// A grouping of resources. Resources in the same group can potentially share work.
+model ResourceGroup {
+  id          Int    @id @default(autoincrement())
+  name        String @unique
+  description String @unique
+
+  orders      Order[]
+  resourceLinks ResourceToGroup[]
+
+  @@map("Resource_groups")
 }
 
+// Defines a work shift with a start and end time.
 model Shift {
-  id               String             @id @default(cuid()) // Replace cuid() with nanoid in application logic
-  name             String
-  startHour        String
-  endHour          String
-  regularResources Resource[]         @relation("ResourceRegularShift")
-  alternateShifts  AlternativeShift[]
-  breaks           REL_Break_Shift[] // Many-to-many via join table
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  startHour DateTime @map("start_hour")
+  endHour   DateTime @map("end_hour")
+
+  // --- Relations ---
+  resources         Resource[] @relation("RegularShift")
+  schedulesMon      Schedule[] @relation("MondayShift")
+  schedulesTue      Schedule[] @relation("TuesdayShift")
+  schedulesWed      Schedule[] @relation("WednesdayShift")
+  schedulesThu      Schedule[] @relation("ThursdayShift")
+  schedulesFri      Schedule[] @relation("FridayShift")
+  schedulesSat      Schedule[] @relation("SaturdayShift")
+  schedulesSun      Schedule[] @relation("SundayShift")
+  alternativeShifts AlternativeShift[]
+  breakLinks        BreakToShift[]
+
+  @@map("Shifts")
 }
 
-model Break {
-  id        String            @id @default(cuid())
-  name      String
-  startHour String
-  endHour   String
-  shifts    REL_Break_Shift[] // Many-to-many via join table
-}
-
-model Restriction {
-  id          String                     @id @default(cuid()) // Replace cuid() with nanoid in application logic
-  name        String
-  description String?
-  resources   REL_Restriction_Resource[]
-}
-
-model REL_Restriction_Resource {
-  id            String      @id @default(cuid())
-  resource      Resource    @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  resourceId    String
-  restriction   Restriction @relation(fields: [restrictionId], references: [id], onDelete: Cascade)
-  restrictionId String
-}
-
+// Represents exceptions or temporary changes to a resource's regular schedule.
 model AlternativeShift {
-  id         String   @id @default(cuid()) // Replace cuid() with nanoid in application logic
-  shift      Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
-  shiftId    String
-  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  resourceId String
-  startDate  String
-  endDate    String
+  id        Int      @id @default(autoincrement())
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+
+  shiftId   Int      @map("shift_id")
+  shift     Shift    @relation(fields: [shiftId], references: [id])
+
+  resourceId Int    @map("resource_id")
+  resource   Resource @relation(fields: [resourceId], references: [id])
+
+  @@map("Alternative_shifts")
 }
 
-model REL_Break_Shift {
-  id      String @id @default(cuid())
-  shift   Shift  @relation(fields: [shiftId], references: [id], onDelete: Cascade)
-  shiftId String
-  break   Break  @relation(fields: [breakId], references: [id], onDelete: Cascade)
-  breakId String
+// Defines a weekly schedule by assigning a shift to each day.
+model Schedule {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  // --- Relations ---
+  mondayId    Int    @map("monday")
+  monday      Shift  @relation("MondayShift", fields: [mondayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  tuesdayId   Int    @map("tuesday")
+  tuesday     Shift  @relation("TuesdayShift", fields: [tuesdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  wednesdayId Int    @map("wednesday")
+  wednesday   Shift  @relation("WednesdayShift", fields: [wednesdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  thursdayId  Int    @map("thursday")
+  thursday    Shift  @relation("ThursdayShift", fields: [thursdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  fridayId    Int    @map("friday")
+  friday      Shift  @relation("FridayShift", fields: [fridayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  saturdayId  Int    @map("saturday")
+  saturday    Shift  @relation("SaturdayShift", fields: [saturdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  sundayId    Int    @map("sunday")
+  sunday      Shift  @relation("SundayShift", fields: [sundayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  resources   Resource[]
+
+  @@map("Schedules")
+}
+
+// Defines a break with a start and end time.
+model Break {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  startTime DateTime @map("start_time")
+  endTime   DateTime @map("end_time")
+
+  shiftLinks BreakToShift[]
+
+  @@map("Breaks")
+}
+
+// Represents a work order to be executed.
+model Order {
+  id                       Int       @id @default(autoincrement())
+  orderNumber              String    @map("orno")
+  operationNumber          String    @map("opno")
+  startTime                DateTime  @map("start_time")
+  endTime                  DateTime  @map("end_time")
+  project                  String?
+  duration                 Float?
+  taskIndex                Float?    @map("task_index")
+  partNumber               String?   @map("part_no")
+  product                  String?
+  opName                   String?   @map("op_name")
+  remainingQuan            Float?    @map("remaining_quan")
+  setupTime                Float?    @map("setup_time")
+
+  resourceExternalCode     String      @map("resource_id")
+  resource                 Resource    @relation(fields: [resourceExternalCode], references: [externalCode])
+
+  resourceGroupDescription String      @map("resource_group_id")
+  resourceGroup            ResourceGroup @relation(fields: [resourceGroupDescription], references: [description])
+
+  @@map("Orders")
+}
+
+
+// -------------------------------------------------------------
+// | Attributes & Changeover Models                            |
+// -------------------------------------------------------------
+
+model Attribute {
+  id                  Int      @id @default(autoincrement())
+  name                String   @unique
+
+  attributeParameters AttrParam[]
+  changeoverData      ChangeoverData[]
+  changeoverTimes     ChangeoverTime[]
+
+  @@map("Attributes")
+}
+
+model AttrParam {
+  id              Int      @id @default(autoincrement())
+  attributeValue  String   @map("attribute_value")
+  attributeNote   String?  @map("attribute_note")
+
+  attributeId     Int      @map("attribute_id")
+  attribute       Attribute @relation(fields: [attributeId], references: [id])
+
+  changeoversFrom ChangeoverData[] @relation("From")
+  changeoversTo   ChangeoverData[] @relation("To")
+
+  @@map("Attributes_parameters")
+}
+
+model ChangeoverGroup {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+
+  resources       Resource[]
+  changeoverData  ChangeoverData[]
+  changeoverTimes ChangeoverTime[]
+
+  @@map("Changeover_groups")
+}
+
+model ChangeoverData {
+  id                     Int       @id @default(autoincrement())
+  setupTime              Float     @map("setup_time")
+
+  // --- Relations ---
+  // CORRECTED: Added referential actions to prevent cycles.
+  changeoverGroupId      Int       @map("changeover_group_id")
+  changeoverGroup        ChangeoverGroup @relation(fields: [changeoverGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  attributeId            Int       @map("attribute_id")
+  attribute              Attribute @relation(fields: [attributeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  fromAttrParamId        Int       @map("from_attr_param_id")
+  fromAttributeParameter AttrParam @relation("From", fields: [fromAttrParamId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  toAttrParamId          Int       @map("to_attr_param_id")
+  toAttributeParameter   AttrParam @relation("To", fields: [toAttrParamId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("Changeover_data")
+}
+
+model ChangeoverTime {
+  id                Int   @id @default(autoincrement())
+  changeoverTime    Float @map("changeover_time")
+
+  changeoverGroupId Int   @map("changeover_group_id")
+  changeoverGroup   ChangeoverGroup @relation(fields: [changeoverGroupId], references: [id])
+
+  attributeId       Int   @map("attribute_id")
+  attribute         Attribute @relation(fields: [attributeId], references: [id])
+
+  @@map("Changeover_times")
+}
+
+
+// -------------------------------------------------------------
+// | Explicit Many-to-Many Join Tables                         |
+// -------------------------------------------------------------
+
+model ResourceToGroup {
+  resourceId      Int      @map("resource_id")
+  resource        Resource @relation(fields: [resourceId], references: [id])
+
+  resourceGroupId Int      @map("resource_group_id")
+  resourceGroup   ResourceGroup @relation(fields: [resourceGroupId], references: [id])
+
+  @@id([resourceId, resourceGroupId])
+  @@map("REL_Resource_group")
+}
+
+model BreakToShift {
+  breakId Int   @map("break_id")
+  break   Break @relation(fields: [breakId], references: [id])
+
+  shiftId Int   @map("shift_id")
+  shift   Shift @relation(fields: [shiftId], references: [id])
+
+  @@id([breakId, shiftId])
+  @@map("REL_Break_Shift")
 }
