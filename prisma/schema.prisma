@@ -63,8 +63,8 @@ model ResourceGroup {
 model Shift {
   id        Int      @id @default(autoincrement())
   name      String   @unique
-  startHour DateTime @map("start_time")
-  endHour   DateTime @map("end_time")
+  startHour DateTime @map("start_hour")
+  endHour   DateTime @map("end_hour")
 
   // --- Relations ---
   resources         Resource[]         @relation("RegularShift")
