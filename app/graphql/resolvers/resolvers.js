@@ -79,32 +79,7 @@ export const resolvers = {
     updateSchedule: async (_, { id, input }) => updateSchedule({ id, input }),
     assignBreakToShift: async (_, { shiftId, breakId }) =>
       assignBreakToShift({ shiftId, breakId }),
-    // assignSchedule: async (_, { resourceId, scheduleId }) =>
-    //   assignSchedule({ resourceId, scheduleId }),
-    // assignAlternativeShiftToResource: async (
-    //   _,
-    //   { resourceId, shiftId, startDate, endDate }
-    // ) => {
-    //   return assignAlternativeShift({
-    //     resourceId,
-    //     shiftId,
-    //     startDate,
-    //     endDate,
-    //   });
-    // },
-    // assignMassiveAlternative: async (
-    //   _,
-    //   { resourceIds, shiftId, startDate, endDate }
-    // ) => {
-    //   return assignMassiveAlternative({
-    //     resourceIds,
-    //     shiftId,
-    //     startDate,
-    //     endDate,
-    //   });
-    // },
-    // addResourcesToGroup: async (_, { groupId, resourceIds }) =>
-    //   addResourceToGroup({ groupId, resourceIds }),
+
     deleteBreak: async (_, { id }) => deleteBreak({ id }),
     removeBreakFromShift: async (_, { shiftId, breakId }) =>
       removeBreakFromShift({ shiftId, breakId }),
@@ -149,8 +124,8 @@ export const resolvers = {
       schedule.sunday ? getShiftById(schedule.sunday) : null,
   },
   Breaks: {
-    startHour: (shift) => shift.startHour,
-    endHour: (shift) => shift.endHour,
+    startTime: (breakObj) => breakObj.startTime,
+    endTime: (breakObj) => breakObj.endTime,
   },
 };
 

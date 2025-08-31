@@ -119,8 +119,8 @@ type Shifts { # Renamed from Shift to Shifts for consistency with Prisma model n
 type Breaks { # Renamed from Break to Breaks for consistency
   id: ID!
   name: String
-  startHour: String
-  endHour: String
+  startTime: String
+  endTime: String
   shifts: [Shifts] # If you want to navigate from Break to Shifts
 }
 
