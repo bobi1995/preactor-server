@@ -1,16 +1,6 @@
 import { GraphQLError } from "graphql";
-import {
-  assignAlternativeShift,
-  assignMassiveAlternative,
-  assignSchedule,
-  createResource,
-  deleteAlternativeShift,
-} from "./mutation/resource.js";
-import {
-  getResources,
-  getResource,
-  getResourcesByGroupId,
-} from "./query/resource.js";
+import { createResource, deleteAlternativeShift } from "./mutation/resource.js";
+import { getResources, getResource } from "./query/resource.js";
 import {
   getShiftById,
   getShifts,
@@ -18,7 +8,7 @@ import {
   getShiftBreaks,
   getAlternativeShifts,
 } from "./query/shift.js";
-import { createShift } from "./mutation/shift.js";
+import { createShift, deleteShift, updateShift } from "./mutation/shift.js";
 import {
   createBreak,
   assignBreakToShift,
@@ -30,12 +20,7 @@ import {
   deleteSchedule,
   updateSchedule,
 } from "./mutation/schedule.js";
-import { getGroups } from "./query/group.js";
-import {
-  addResourceToGroup,
-  createGroup,
-  removeResourceFromGroup,
-} from "./mutation/groups.js";
+
 import { getOrders, getOrdersByResourceId } from "./query/order.js";
 
 export const resolvers = {
@@ -52,11 +37,15 @@ export const resolvers = {
     //getGroups: () => getGroups(),
     getShifts: () => getShifts(),
     getShift: async (_, { id }) => {
-      const shift = await getShiftById(id);
-      if (!shift) {
-        throw notFoundError("Shift not found");
+      if (id) {
+        const shift = await getShiftById(id);
+        if (!shift) {
+          throw notFoundError("Shift not found");
+        }
+        return shift;
+      } else {
+        throw new Error("ID_NOT_PROVIDED");
       }
-      return shift;
     },
     getBreaks: () => getBreaks(),
     getSchedules: () => getSchedules(),
@@ -70,10 +59,13 @@ export const resolvers = {
     getOrders: () => getOrders(),
   },
   Mutation: {
+    //SHIFT-RELATED MUTATIONS
+    createShift: async (_, { input }) => createShift({ input }),
+    updateShift: async (_, { id, input }) => updateShift({ id, input }),
     createResource: async (_, { input }) => createResource({ input }),
+    deleteShift: async (_, { id }) => deleteShift({ id }),
     // createGroup: async (_, { name, description }) =>
     // createGroup({ name, description }),
-    createShift: async (_, { input }) => createShift({ input }),
     createBreak: async (_, { input }) => createBreak({ input }),
     createSchedule: async (_, { name }) => createSchedule({ name }),
     updateSchedule: async (_, { id, input }) => updateSchedule({ id, input }),

@@ -2,8 +2,13 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export const getShifts = async () => {
-  const shifts = await prisma.shift.findMany();
-  return shifts;
+  try {
+    const shifts = await prisma.shift.findMany();
+    return shifts;
+  } catch (error) {
+    console.error("Error fetching shifts:", error);
+    throw new Error("Failed to fetch shifts");
+  }
 };
 
 export const getShiftById = async (id) => {

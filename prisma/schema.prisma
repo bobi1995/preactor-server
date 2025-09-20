@@ -61,10 +61,10 @@ model ResourceGroup {
 
 // Defines a work shift with a start and end time.
 model Shift {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  startHour DateTime @map("start_hour")
-  endHour   DateTime @map("end_hour")
+  id        Int    @id @default(autoincrement())
+  name      String @unique
+  startHour String @map("start_time")
+  endHour   String @map("end_time")
 
   // --- Relations ---
   resources         Resource[]         @relation("RegularShift")
