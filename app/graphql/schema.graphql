@@ -44,12 +44,12 @@ type Mutation {
   ): REL_Resource_Group_Payload # Creates link in REL_Resource_Group
   removeResourceFromGroup(resourceId: ID!, resourceGroupId: ID!): SuccessMessage # Deletes link from REL_Resource_Group
   # Shift Mutations
-  createShift(input: ShiftInput!): Shifts
-  updateShift(id: ID!, input: UpdateShiftInput!): Shifts # Added update mutation
+  createShift(input: ShiftFields!): Shifts
+  updateShift(id: ID!, input: ShiftFields!): Shifts # Added update mutation
   deleteShift(id: ID!): SuccessMessage # Or return Shift
   # Break Mutations
-  createBreak(input: BreakInput!): Breaks
-  updateBreak(id: ID!, input: UpdateBreakInput!): Breaks # Added update mutation
+  createBreak(input: BreakFields!): Breaks
+  updateBreak(id: ID!, input: BreakFields!): Breaks # Added update mutation
   deleteBreak(id: ID!): SuccessMessage # Or return Break
   assignBreakToShift(shiftId: ID!, breakId: ID!): Shifts # Manages REL_Break_Shift or implicit M2M
   removeBreakFromShift(shiftId: ID!, breakId: ID!): Shifts # Manages REL_Break_Shift or implicit M2M
@@ -209,25 +209,13 @@ input UpdateResourceGroupInput {
   description: String
 }
 
-input ShiftInput { # For create
+input ShiftFields { # For create
   name: String
   startHour: String # e.g., "08:00"
   endHour: String # e.g., "17:00"
 }
 
-input UpdateShiftInput { # For update
-  name: String
-  startHour: String
-  endHour: String
-}
-
-input BreakInput { # For create
-  name: String
-  startHour: String
-  endHour: String
-}
-
-input UpdateBreakInput { # For update
+input BreakFields { # For create
   name: String
   startHour: String
   endHour: String
