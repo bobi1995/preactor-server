@@ -13,11 +13,11 @@ type Query {
   # getResourceGroup(id: ID!): ResourceGroup
 
   # Shift Queries
-  getShifts: [Shifts]
-  getShift(id: ID!): Shifts
+  getShifts: [Shift]
+  getShift(id: ID!): Shift
 
   # Break Queries
-  getBreaks: [Breaks] # Assuming you want to query all available breaks
+  getBreaks: [Break] # Assuming you want to query all available breaks
   # WeekSchedule Queries
   getSchedules: [WeekSchedules]
   getSchedule(id: ID!): WeekSchedules
@@ -44,15 +44,15 @@ type Mutation {
   ): REL_Resource_Group_Payload # Creates link in REL_Resource_Group
   removeResourceFromGroup(resourceId: ID!, resourceGroupId: ID!): SuccessMessage # Deletes link from REL_Resource_Group
   # Shift Mutations
-  createShift(input: ShiftFields!): Shifts
-  updateShift(id: ID!, input: ShiftFields!): Shifts # Added update mutation
+  createShift(input: ShiftFields!): Shift
+  updateShift(id: ID!, input: ShiftFields!): Shift # Added update mutation
   deleteShift(id: ID!): SuccessMessage # Or return Shift
   # Break Mutations
-  createBreak(input: BreakFields!): Breaks
-  updateBreak(id: ID!, input: BreakFields!): Breaks # Added update mutation
+  createBreak(input: BreakFields!): Break
+  updateBreak(id: ID!, input: BreakFields!): Break # Added update mutation
   deleteBreak(id: ID!): SuccessMessage # Or return Break
-  assignBreakToShift(shiftId: ID!, breakId: ID!): Shifts # Manages REL_Break_Shift or implicit M2M
-  removeBreakFromShift(shiftId: ID!, breakId: ID!): Shifts # Manages REL_Break_Shift or implicit M2M
+  assignBreakToShift(shiftId: ID!, breakId: ID!): Shift # Manages REL_Break_Shift or implicit M2M
+  removeBreakFromShift(shiftId: ID!, breakId: ID!): Shift # Manages REL_Break_Shift or implicit M2M
   # WeekSchedule Mutations
   createSchedule(input: CreateWeekScheduleInput!): WeekSchedules
   updateSchedule(id: ID!, input: UpdateWeekScheduleInput!): WeekSchedules
@@ -86,7 +86,7 @@ type Resources {
   color: String
   picture: String # Prisma Bytes? can be represented as a base64 String
   external_code: String!
-  regularShift: Shifts # Populated via regularShiftId
+  regularShift: Shift # Populated via regularShiftId
   weekSchedule: WeekSchedules # Populated via weekScheduleId
   alternativeShifts: [AlternativeShifts]
   resourceGroups: [ResourceGroup] # Resources can be in multiple groups
@@ -108,38 +108,38 @@ type REL_Resource_Group_Payload {
   createdAt: DateTime! # Assuming DateTime scalar for ISO strings
 }
 
-type Shifts { # Renamed from Shift to Shifts for consistency with Prisma model name
+type Shift {
   id: ID!
-  name: String
-  startHour: String # e.g., "08:00"
-  endHour: String # e.g., "17:00"
-  breaks: [Breaks] # Populated via (implicit or explicit) join table
+  name: String!
+  startHour: String!
+  endHour: String!
+  breaks: [Break!]!
 }
 
-type Breaks { # Renamed from Break to Breaks for consistency
+type Break {
   id: ID!
-  name: String
-  startTime: String
-  endTime: String
-  shifts: [Shifts] # If you want to navigate from Break to Shifts
+  name: String!
+  startTime: String!
+  endTime: String!
+  shifts: [Shift!]!
 }
 
 type WeekSchedules { # Renamed from WeekSchedule to WeekSchedules
   id: ID!
   name: String
-  monday: Shifts
-  tuesday: Shifts
-  wednesday: Shifts
-  thursday: Shifts
-  friday: Shifts
-  saturday: Shifts
-  sunday: Shifts
+  monday: Shift
+  tuesday: Shift
+  wednesday: Shift
+  thursday: Shift
+  friday: Shift
+  saturday: Shift
+  sunday: Shift
   resources: [Resources] # Resources using this schedule
 }
 
 type AlternativeShifts { # Renamed from AlternativeShift to AlternativeShifts
   id: ID!
-  shift: Shifts! # Assuming a shift is mandatory for an alternative shift record
+  shift: Shift! # Assuming a shift is mandatory for an alternative shift record
   resource: Resources!
   startDate: DateTime! # Assuming DateTime scalar
   endDate: DateTime! # Assuming DateTime scalar
@@ -217,8 +217,8 @@ input ShiftFields { # For create
 
 input BreakFields { # For create
   name: String
-  startHour: String
-  endHour: String
+  startTime: String
+  endTime: String
 }
 
 input CreateWeekScheduleInput {

@@ -128,12 +128,11 @@ model Schedule {
   @@map("Schedules")
 }
 
-// Defines a break with a start and end time.
 model Break {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  startTime DateTime @map("start_time")
-  endTime   DateTime @map("end_time")
+  id        Int    @id @default(autoincrement())
+  name      String @unique
+  startTime String @map("start_time")
+  endTime   String @map("end_time")
 
   shiftLinks BreakToShift[]
 

@@ -4,15 +4,17 @@ import { getResources, getResource } from "./query/resource.js";
 import {
   getShiftById,
   getShifts,
-  getBreaks,
   getShiftBreaks,
   getAlternativeShifts,
+  getShiftsByBreakId,
 } from "./query/shift.js";
 import { createShift, deleteShift, updateShift } from "./mutation/shift.js";
 import {
   createBreak,
   assignBreakToShift,
   removeBreakFromShift,
+  deleteBreak,
+  updateBreak,
 } from "./mutation/break.js";
 import { getScheduleById, getSchedules } from "./query/schedule.js";
 import {
@@ -20,7 +22,7 @@ import {
   deleteSchedule,
   updateSchedule,
 } from "./mutation/schedule.js";
-
+import { getBreaks } from "./query/break.js";
 import { getOrders, getOrdersByResourceId } from "./query/order.js";
 
 export const resolvers = {
@@ -67,6 +69,7 @@ export const resolvers = {
     // createGroup: async (_, { name, description }) =>
     // createGroup({ name, description }),
     createBreak: async (_, { input }) => createBreak({ input }),
+    updateBreak: async (_, { id, input }) => updateBreak({ id, input }),
     createSchedule: async (_, { name }) => createSchedule({ name }),
     updateSchedule: async (_, { id, input }) => updateSchedule({ id, input }),
     assignBreakToShift: async (_, { shiftId, breakId }) =>
@@ -94,7 +97,7 @@ export const resolvers = {
   //     return getResourcesByGroupId(group.id);
   //   },
   // },
-  Shifts: {
+  Shift: {
     startHour: (shift) => shift.startHour,
     endHour: (shift) => shift.endHour,
     breaks: (shift) => getShiftBreaks(shift.id),
@@ -115,9 +118,13 @@ export const resolvers = {
     sunday: (schedule) =>
       schedule.sunday ? getShiftById(schedule.sunday) : null,
   },
-  Breaks: {
+  Break: {
     startTime: (breakObj) => breakObj.startTime,
     endTime: (breakObj) => breakObj.endTime,
+    shifts: (breakObj) => {
+      console.log(breakObj);
+      return getShiftsByBreakId(breakObj.id);
+    },
   },
 };
 
