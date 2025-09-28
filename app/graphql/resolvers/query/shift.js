@@ -18,7 +18,6 @@ export const getShiftById = async (id) => {
         id: parseInt(id),
       },
     });
-    console.log(shift);
     return shift;
   } catch (error) {
     console.error("Error fetching shift by ID:", error);

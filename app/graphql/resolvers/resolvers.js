@@ -122,7 +122,6 @@ export const resolvers = {
     startTime: (breakObj) => breakObj.startTime,
     endTime: (breakObj) => breakObj.endTime,
     shifts: (breakObj) => {
-      console.log(breakObj);
       return getShiftsByBreakId(breakObj.id);
     },
   },

@@ -13,13 +13,27 @@ export const createBreak = async ({ input }) => {
 };
 
 export const assignBreakToShift = async ({ shiftId, breakId }) => {
-  const shiftBreak = await prisma.rEL_Break_Shift.create({
+  // Проверка за съществуваща връзка, за да не се създават дубликати
+  const existingLink = await prisma.breakToShift.findFirst({
+    where: {
+      shiftId: parseInt(shiftId),
+      breakId: parseInt(breakId),
+    },
+  });
+
+  if (existingLink) {
+    // Ако връзката вече съществува, просто връщаме смяната.
+    return prisma.shift.findUnique({ where: { id: parseInt(shiftId) } });
+  }
+
+  await prisma.breakToShift.create({
     data: {
       shiftId: parseInt(shiftId),
       breakId: parseInt(breakId),
     },
   });
-  return shiftBreak;
+  // Връщаме обновения обект на смяната, за да може Apollo кешът да се актуализира
+  return prisma.shift.findUnique({ where: { id: parseInt(shiftId) } });
 };
 export const deleteBreak = async ({ id }) => {
   if (!id) {
@@ -41,9 +55,8 @@ export const deleteBreak = async ({ id }) => {
       where: {
         breakId: breakId,
       },
-    });
+    }); // Стъпка 2: Ако е присвоена, хвърляме грешка и спираме процеса.
 
-    // Стъпка 2: Ако е присвоена, хвърляме грешка и спираме процеса.
     if (assignmentCount > 0) {
       throw new GraphQLError(
         "Не може да изтриете тази почивка, защото е присвоена към една или повече смени. Моля, първо премахнете връзките.",
@@ -51,9 +64,8 @@ export const deleteBreak = async ({ id }) => {
           extensions: { code: "BREAK_IN_USE" },
         }
       );
-    }
+    } // Стъпка 3: Ако няма връзки, изтриваме почивката.
 
-    // Стъпка 3: Ако няма връзки, изтриваме почивката.
     await prisma.break.delete({
       where: {
         id: breakId,
@@ -68,16 +80,14 @@ export const deleteBreak = async ({ id }) => {
     // Прехвърляме нашата персонализирана грешка, ако съществува.
     if (error instanceof GraphQLError) {
       throw error;
-    }
+    } // Обработка на случай, в който почивката не е намерена.
 
-    // Обработка на случай, в който почивката не е намерена.
     if (error.code === "P2025") {
       throw new GraphQLError("Почивката не е намерена.", {
         extensions: { code: "NOT_FOUND" },
       });
-    }
+    } // За всички други неочаквани грешки.
 
-    // За всички други неочаквани грешки.
     console.error("Грешка при изтриване на почивка:", error);
     throw new GraphQLError(
       "Възникна неочаквана грешка при опит за изтриване на почивката.",
@@ -88,24 +98,17 @@ export const deleteBreak = async ({ id }) => {
   }
 };
 export const removeBreakFromShift = async ({ shiftId, breakId }) => {
-  const record = await prisma.rEL_Break_Shift.findFirst({
+  // ОПТИМИЗАЦИЯ: Използваме deleteMany с композитен ключ за директно изтриване.
+  // Това е по-ефективно, защото не изисква първо да намираме записа.
+  await prisma.breakToShift.deleteMany({
     where: {
       shiftId: parseInt(shiftId),
       breakId: parseInt(breakId),
     },
   });
 
-  if (record) {
-    const deletedBreak = await prisma.rEL_Break_Shift.delete({
-      where: {
-        id: record.id,
-      },
-    });
-    console.log("redeleted");
-    return deletedBreak;
-  }
-
-  throw new Error("No record found for the specified shiftId and breakId.");
+  // Връщаме обновения обект на смяната, за да може Apollo кешът да се актуализира
+  return prisma.shift.findUnique({ where: { id: parseInt(shiftId) } });
 };
 
 export const updateBreak = async ({ id, input }) => {
