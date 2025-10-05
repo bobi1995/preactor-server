@@ -16,7 +16,6 @@ export const updateShift = async ({ id, input }) => {
   if (!id) {
     throw new Error("ID_NOT_PROVIDED");
   }
-
   try {
     const updatedShift = await prisma.shift.update({
       where: { id: parseInt(id) },
