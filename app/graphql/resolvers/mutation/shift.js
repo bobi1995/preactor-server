@@ -2,21 +2,34 @@ import prisma from "../../../../prisma/prismaClient.js";
 import { GraphQLError } from "graphql";
 
 export const createShift = async ({ input }) => {
-  const shift = await prisma.shift.create({
-    data: {
-      name: input.name,
-      startHour: input.startHour,
-      endHour: input.endHour,
-    },
-  });
-  return shift;
+  try {
+    const shift = await prisma.shift.create({
+      data: {
+        name: input.name,
+        startHour: input.startHour,
+        endHour: input.endHour,
+      },
+    });
+    return shift;
+  } catch (error) {
+    if (error.code === "P2002" && error.meta?.modelName === "Shift") {
+      throw new GraphQLError(
+        `A shift with the name "${input.name}" already exists.`,
+        {
+          extensions: { code: "SHIFT_NAME_TAKEN" },
+        }
+      );
+    }
+    throw new GraphQLError("Failed to create shift.", {
+      extensions: { code: "INTERNAL_SERVER_ERROR" },
+    });
+  }
 };
 
 export const updateShift = async ({ id, input }) => {
   if (!id) {
     throw new Error("ID_NOT_PROVIDED");
   }
-
   try {
     const updatedShift = await prisma.shift.update({
       where: { id: parseInt(id) },
@@ -28,8 +41,17 @@ export const updateShift = async ({ id, input }) => {
     });
     return updatedShift;
   } catch (error) {
-    console.error("Error updating shift:", error);
-    throw new Error("Failed to update shift");
+    if (error.code === "P2002" && error.meta?.modelName === "Shift") {
+      throw new GraphQLError(
+        `A shift with the name "${input.name}" already exists.`,
+        {
+          extensions: { code: "SHIFT_NAME_TAKEN" },
+        }
+      );
+    }
+    throw new GraphQLError("Failed to update shift.", {
+      extensions: { code: "INTERNAL_SERVER_ERROR" },
+    });
   }
 };
 
@@ -50,34 +72,22 @@ export const deleteShift = async ({ id }) => {
   try {
     // --- Step 1: Perform pre-checks to see if the shift is in use ---
     // We run these checks concurrently in a single transaction for efficiency.
-    const [resourceCount, scheduleCount, alternativeShiftCount] =
-      await prisma.$transaction([
-        prisma.resource.count({ where: { regularShiftId: shiftId } }),
-        prisma.schedule.count({
-          where: {
-            OR: [
-              { mondayId: shiftId },
-              { tuesdayId: shiftId },
-              { wednesdayId: shiftId },
-              { thursdayId: shiftId },
-              { fridayId: shiftId },
-              { saturdayId: shiftId },
-              { sundayId: shiftId },
-            ],
-          },
-        }),
-        prisma.alternativeShift.count({ where: { shiftId: shiftId } }),
-      ]);
-
-    // --- Step 2: If any check finds a usage, throw a specific error ---
-    if (resourceCount > 0) {
-      throw new GraphQLError(
-        "Cannot delete shift. It is assigned as a regular shift to one or more resources.",
-        {
-          extensions: { code: "SHIFT_IN_USE_BY_RESOURCE" },
-        }
-      );
-    }
+    const [scheduleCount, alternativeShiftCount] = await prisma.$transaction([
+      prisma.schedule.count({
+        where: {
+          OR: [
+            { mondayId: shiftId },
+            { tuesdayId: shiftId },
+            { wednesdayId: shiftId },
+            { thursdayId: shiftId },
+            { fridayId: shiftId },
+            { saturdayId: shiftId },
+            { sundayId: shiftId },
+          ],
+        },
+      }),
+      prisma.alternativeShift.count({ where: { shiftId: shiftId } }),
+    ]);
 
     if (scheduleCount > 0) {
       throw new GraphQLError(

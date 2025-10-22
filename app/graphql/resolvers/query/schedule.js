@@ -1,15 +1,21 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import prisma from "../../../../prisma/prismaClient.js";
 
 export const getSchedules = async () => {
-  const schedule = await prisma.weekSchedule.findMany();
-  return schedule;
+  const schedules = await prisma.schedule.findMany({
+    orderBy: {
+      name: "asc",
+    },
+  });
+  return schedules;
 };
 
 export const getScheduleById = async (id) => {
-  const schedule = await prisma.weekSchedule.findUnique({
+  const scheduleId = parseInt(id);
+  if (isNaN(scheduleId)) return null;
+
+  const schedule = await prisma.schedule.findUnique({
     where: {
-      id: parseInt(id),
+      id: scheduleId,
     },
   });
   return schedule;
