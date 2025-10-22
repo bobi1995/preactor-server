@@ -44,16 +44,47 @@ export const uploadPicture = async ({ picPath, id }) => {
   return resource;
 };
 
-export const assignSchedule = async ({ resourceId, scheduleId }) => {
-  const resource = await prisma.resource.update({
-    where: {
-      id: resourceId,
-    },
-    data: {
-      scheduleId,
-    },
-  });
-  return resource;
+export const assignScheduleToResource = async ({ resourceId, scheduleId }) => {
+  const rId = parseInt(resourceId);
+  const sId = scheduleId ? parseInt(scheduleId) : null; // Allow un-assigning by passing null
+
+  if (isNaN(rId)) {
+    throw new GraphQLError("Invalid Resource ID.", {
+      extensions: { code: "BAD_USER_INPUT" },
+    });
+  }
+  if (scheduleId && isNaN(sId)) {
+    throw new GraphQLError("Invalid Schedule ID.", {
+      extensions: { code: "BAD_USER_INPUT" },
+    });
+  }
+
+  try {
+    const updatedResource = await prisma.resource.update({
+      where: {
+        id: rId,
+      },
+      data: {
+        scheduleId: sId,
+      },
+    });
+    return updatedResource;
+  } catch (error) {
+    if (error.code === "P2025") {
+      throw new GraphQLError("Resource not found.", {
+        extensions: { code: "NOT_FOUND" },
+      });
+    }
+    if (error.code === "P2003") {
+      throw new GraphQLError("The specified Schedule does not exist.", {
+        extensions: { code: "NOT_FOUND" },
+      });
+    }
+    console.error("Error assigning schedule to resource:", error);
+    throw new GraphQLError("Could not assign schedule to resource.", {
+      extensions: { code: "INTERNAL_SERVER_ERROR" },
+    });
+  }
 };
 
 export const assignAlternativeShift = async ({
@@ -112,6 +143,46 @@ export const assignMassiveAlternative = async ({
     })
   );
   return alternativeShifts[0];
+};
+
+export const assignAlternativeShiftToResource = async ({ input }) => {
+  const { resourceId, shiftId, startDate, endDate } = input;
+
+  // Basic validation
+  if (!resourceId || !shiftId || !startDate || !endDate) {
+    throw new GraphQLError(
+      "All fields (resourceId, shiftId, startDate, endDate) are required.",
+      {
+        extensions: { code: "BAD_USER_INPUT" },
+      }
+    );
+  }
+
+  try {
+    const newAlternativeShift = await prisma.alternativeShift.create({
+      data: {
+        resourceId: parseInt(resourceId),
+        shiftId: parseInt(shiftId),
+        startDate: new Date(startDate), // Ensure dates are converted to Date objects
+        endDate: new Date(endDate),
+      },
+    });
+    return newAlternativeShift;
+  } catch (error) {
+    // Handle cases where the resource or shift doesn't exist
+    if (error.code === "P2003") {
+      throw new GraphQLError(
+        "The specified Resource or Shift does not exist.",
+        {
+          extensions: { code: "NOT_FOUND" },
+        }
+      );
+    }
+    console.error("Error creating alternative shift:", error);
+    throw new GraphQLError("Failed to create alternative shift.", {
+      extensions: { code: "INTERNAL_SERVER_ERROR" },
+    });
+  }
 };
 
 export const deleteAlternativeShift = async ({ id }) => {

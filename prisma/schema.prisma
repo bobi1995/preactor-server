@@ -20,8 +20,6 @@ model Resource {
   externalCode String   @unique @map("external_code")
   accumulative Boolean?
 
-  regularShiftId    Int?             @map("regular_shift_id")
-  regularShift      Shift?           @relation("RegularShift", fields: [regularShiftId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   scheduleId        Int?             @map("schedule_id")
   schedule          Schedule?        @relation(fields: [scheduleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   changeoverGroupId Int?             @map("changeover_group_id")
@@ -51,7 +49,6 @@ model Shift {
   startHour String @map("start_time")
   endHour   String @map("end_time")
 
-  resources         Resource[]         @relation("RegularShift")
   schedulesMon      Schedule[]         @relation("MondayShift")
   schedulesTue      Schedule[]         @relation("TuesdayShift")
   schedulesWed      Schedule[]         @relation("WednesdayShift")
@@ -82,20 +79,26 @@ model Schedule {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  mondayId    Int   @map("monday")
-  monday      Shift @relation("MondayShift", fields: [mondayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  tuesdayId   Int   @map("tuesday")
-  tuesday     Shift @relation("TuesdayShift", fields: [tuesdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  wednesdayId Int   @map("wednesday")
-  wednesday   Shift @relation("WednesdayShift", fields: [wednesdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  thursdayId  Int   @map("thursday")
-  thursday    Shift @relation("ThursdayShift", fields: [thursdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  fridayId    Int   @map("friday")
-  friday      Shift @relation("FridayShift", fields: [fridayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  saturdayId  Int   @map("saturday")
-  saturday    Shift @relation("SaturdayShift", fields: [saturdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  sundayId    Int   @map("sunday")
-  sunday      Shift @relation("SundayShift", fields: [sundayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  mondayId Int?   @map("monday")
+  monday   Shift? @relation("MondayShift", fields: [mondayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  tuesdayId Int?   @map("tuesday")
+  tuesday   Shift? @relation("TuesdayShift", fields: [tuesdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  wednesdayId Int?   @map("wednesday")
+  wednesday   Shift? @relation("WednesdayShift", fields: [wednesdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  thursdayId Int?   @map("thursday")
+  thursday   Shift? @relation("ThursdayShift", fields: [thursdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  fridayId Int?   @map("friday")
+  friday   Shift? @relation("FridayShift", fields: [fridayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  saturdayId Int?   @map("saturday")
+  saturday   Shift? @relation("SaturdayShift", fields: [saturdayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  sundayId Int?   @map("sunday")
+  sunday   Shift? @relation("SundayShift", fields: [sundayId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   resources Resource[]
 

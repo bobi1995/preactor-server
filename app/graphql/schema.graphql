@@ -34,6 +34,10 @@ type Mutation {
   createResource(input: ResourceInput!): Resources
   updateResource(id: ID!, input: UpdateResourceInput!): Resources # Added update mutation
   deleteResource(id: ID!): SuccessMessage # Or return Resource
+  assignScheduleToResource(resourceId: ID!, scheduleId: ID!): Resources # Updates Resource.weekScheduleId
+  assignAlternativeShiftToResource(
+    input: AssignAlternativeShiftInput!
+  ): AlternativeShifts
   # ResourceGroup Mutations
   createResourceGroup(input: ResourceGroupInput!): ResourceGroup
   updateResourceGroup(id: ID!, input: UpdateResourceGroupInput!): ResourceGroup
@@ -57,11 +61,6 @@ type Mutation {
   createSchedule(input: CreateWeekScheduleInput!): WeekSchedules
   updateSchedule(id: ID!, input: UpdateWeekScheduleInput!): WeekSchedules
   deleteSchedule(id: ID!): SuccessMessage # Or return WeekSchedule
-  assignScheduleToResource(resourceId: ID!, scheduleId: ID!): Resources # Updates Resource.weekScheduleId
-  # AlternativeShift Mutations
-  assignAlternativeShiftToResource(
-    input: AssignAlternativeShiftInput!
-  ): AlternativeShifts
   updateAlternativeShift(
     id: ID!
     input: UpdateAlternativeShiftInput!
@@ -70,11 +69,6 @@ type Mutation {
   assignMassiveAlternativeShiftToResources(
     input: AssignMassiveAlternativeShiftInput!
   ): [AlternativeShifts]
-
-  # Orders Mutations (Example - if you manage orders via this API)
-  # createOrder(input: CreateOrderInput!): Orders
-  # updateOrder(id: ID!, input: UpdateOrderInput!): Orders
-  # deleteOrder(id: ID!): SuccessMessage
 }
 
 # --- Main Data Types ---
@@ -86,7 +80,6 @@ type Resources {
   color: String
   picture: String # Prisma Bytes? can be represented as a base64 String
   external_code: String!
-  regularShift: Shift # Populated via regularShiftId
   weekSchedule: WeekSchedules # Populated via weekScheduleId
   alternativeShifts: [AlternativeShifts]
   resourceGroups: [ResourceGroup] # Resources can be in multiple groups
@@ -143,6 +136,7 @@ type AlternativeShifts { # Renamed from AlternativeShift to AlternativeShifts
   resource: Resources!
   startDate: DateTime! # Assuming DateTime scalar
   endDate: DateTime! # Assuming DateTime scalar
+  #status: ENUM ("maintenance", "breakdown", "active") # Example status enum
 }
 
 type Orders {
@@ -180,7 +174,6 @@ input ResourceInput {
   color: String
   picture: String # Base64 string for Bytes
   external_code: String!
-  regularShiftId: ID
   weekScheduleId: ID
   # For M2M ResourceGroup assignment, use addResourceToGroup mutation
   # or accept an array of group IDs here if preferred:
@@ -193,7 +186,6 @@ input UpdateResourceInput {
   color: String
   picture: String
   external_code: String
-  regularShiftId: ID
   weekScheduleId: ID
   # resourceGroupIdsToConnect: [ID!]
   # resourceGroupIdsToDisconnect: [ID!]
