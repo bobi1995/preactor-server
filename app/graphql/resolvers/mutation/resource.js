@@ -2,19 +2,88 @@ import prisma from "../../../../prisma/prismaClient.js";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { GraphQLError } from "graphql";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const mapInputToData = (input) => {
+  const { schedule_id, changeover_group_id, ...rest } = input;
+
+  const data = {
+    ...rest,
+  };
+
+  if (schedule_id !== undefined) {
+    data.scheduleId = schedule_id ? parseInt(schedule_id) : null;
+  }
+  if (changeover_group_id !== undefined) {
+    data.changeoverGroupId = changeover_group_id
+      ? parseInt(changeover_group_id)
+      : null;
+  }
+
+  if (input.accumulative !== undefined) {
+    data.accumulative = Boolean(input.accumulative);
+  }
+
+  return data;
+};
+
 export const createResource = async ({ input }) => {
-  const resource = await prisma.resource.create({
-    data: {
-      name: input.name,
-      description: input.description,
-      color: input.color,
-    },
-  });
-  return resource;
+  try {
+    const data = mapInputToData(input);
+    const newResource = await prisma.resource.create({
+      data: data,
+    });
+    return newResource;
+  } catch (error) {
+    console.error("Error creating resource:", error);
+    if (error.code === "P2002") {
+      // Unique constraint violation (e.g., external_code)
+      throw new GraphQLError(
+        "A resource with this external code already exists.",
+        {
+          extensions: { code: "BAD_USER_INPUT" },
+        }
+      );
+    }
+    throw new GraphQLError("Failed to create resource.", {
+      extensions: { code: "INTERNAL_SERVER_ERROR" },
+    });
+  }
+};
+
+export const updateResource = async (_, { input }) => {
+  try {
+    const { id, ...updateData } = input;
+    const data = mapInputToData(updateData);
+
+    const updatedResource = await prisma.resource.update({
+      where: { id: parseInt(id) },
+      data: data,
+    });
+    return updatedResource;
+  } catch (error) {
+    console.error("Error updating resource:", error);
+    if (error.code === "P2025") {
+      // Record to update not found
+      throw new GraphQLError("Resource not found.", {
+        extensions: { code: "NOT_FOUND" },
+      });
+    }
+    if (error.code === "P2002") {
+      throw new GraphQLError(
+        "A resource with this external code already exists.",
+        {
+          extensions: { code: "BAD_USER_INPUT" },
+        }
+      );
+    }
+    throw new GraphQLError("Failed to update resource.", {
+      extensions: { code: "INTERNAL_SERVER_ERROR" },
+    });
+  }
 };
 
 export const uploadPicture = async ({ picPath, id }) => {
@@ -85,23 +154,6 @@ export const assignScheduleToResource = async ({ resourceId, scheduleId }) => {
       extensions: { code: "INTERNAL_SERVER_ERROR" },
     });
   }
-};
-
-export const assignAlternativeShift = async ({
-  resourceId,
-  shiftId,
-  startDate,
-  endDate,
-}) => {
-  const alternativeShift = await prisma.alternativeShift.create({
-    data: {
-      shiftId,
-      resourceId,
-      startDate,
-      endDate,
-    },
-  });
-  return alternativeShift;
 };
 
 export const assignMassiveAlternative = async ({
@@ -192,4 +244,77 @@ export const deleteAlternativeShift = async ({ id }) => {
     },
   });
   return alternativeShift;
+};
+
+export const deleteResource = async (_, { id }) => {
+  const resourceId = parseInt(id);
+  try {
+    // 1. Check if the resource exists
+    const resourceToDelete = await prisma.resource.findUnique({
+      where: { id: resourceId },
+      select: { id: true, picture: true },
+    });
+
+    if (!resourceToDelete) {
+      throw new GraphQLError("Resource not found.", {
+        extensions: { code: "NOT_FOUND" },
+      });
+    }
+
+    // 2. Perform cascading cleanup within a transaction
+    await prisma.$transaction(async (tx) => {
+      // 2a. Delete related AlternativeShifts
+      await tx.alternativeShift.deleteMany({
+        where: { resourceId: resourceId },
+      });
+
+      // 2b. Delete links in REL_Resource_group
+      await tx.resourceToGroup.deleteMany({
+        where: { resourceId: resourceId },
+      });
+
+      // 2c. Check for related Orders.
+      const relatedOrders = await tx.order.findFirst({
+        where: { resourceId: resourceId },
+      });
+      if (relatedOrders) {
+        throw new GraphQLError(
+          "Cannot delete resource. It is still linked to one or more orders.",
+          { extensions: { code: "BAD_REQUEST" } }
+        );
+      }
+
+      // 2d. Finally, delete the resource itself
+      await tx.resource.delete({
+        where: { id: resourceId },
+      });
+    });
+
+    // 3. Delete the associated picture file (if it exists)
+    if (resourceToDelete.picture) {
+      try {
+        await fs.unlink(
+          path.join(__dirname, "../../../../public", resourceToDelete.picture)
+        );
+      } catch (fileError) {
+        console.warn(
+          `Failed to delete picture file ${resourceToDelete.picture} for deleted resource ${resourceId}:`,
+          fileError
+        );
+      }
+    }
+
+    return {
+      message: "Resource deleted successfully.",
+      success: true,
+    };
+  } catch (error) {
+    if (error.extensions?.code) {
+      throw error;
+    }
+    console.error(`Error deleting resource ${id}:`, error);
+    throw new GraphQLError("Failed to delete resource.", {
+      extensions: { code: "INTERNAL_SERVER_ERROR" },
+    });
+  }
 };

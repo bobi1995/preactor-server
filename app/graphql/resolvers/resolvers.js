@@ -4,6 +4,8 @@ import {
   createResource,
   deleteAlternativeShift,
   assignAlternativeShiftToResource,
+  deleteResource,
+  updateResource,
 } from "./mutation/resource.js";
 import { getResources, getResource } from "./query/resource.js";
 import {
@@ -86,6 +88,10 @@ export const resolvers = {
     removeBreakFromShift: async (_, { shiftId, breakId }) =>
       removeBreakFromShift({ shiftId, breakId }),
     deleteAlternativeShift: async (_, { id }) => deleteAlternativeShift({ id }),
+    //RESOURCE MUTATIONS
+    updateResource: async (_, { id, input }) =>
+      updateResource(_, { id, input }),
+    deleteResource: async (_, { id }) => deleteResource(_, { id }),
 
     //RESOURCE-RELATED MUTATIONS
     assignScheduleToResource: async (_, { resourceId, scheduleId }) =>
@@ -95,8 +101,8 @@ export const resolvers = {
     // deleteResourceFromGroup: async (_, { groupId, resourceId }) =>
     //   removeResourceFromGroup({ groupId, resourceId }),
   },
-  Resources: {
-    weekSchedule: (resource) =>
+  Resource: {
+    schedule: (resource) =>
       resource.scheduleId ? getScheduleById(resource.scheduleId) : null,
     alternativeShifts: (resource) => getAlternativeShifts(resource.id),
     orders: (resource) => getOrdersByResourceId(resource.id),
@@ -112,7 +118,7 @@ export const resolvers = {
     endHour: (shift) => shift.endHour,
     breaks: (shift) => getShiftBreaks(shift.id),
   },
-  WeekSchedules: {
+  Schedule: {
     monday: (schedule) =>
       schedule.mondayId ? getShiftById(schedule.mondayId) : null,
     tuesday: (schedule) =>

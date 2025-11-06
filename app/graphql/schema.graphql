@@ -5,8 +5,14 @@ type Query {
   hello: String
 
   # Resource Queries
-  getResources: [Resources]
-  getResource(id: ID!): Resources
+  """
+  Fetches all resources.
+  """
+  getResources: [Resource!]!
+  """
+  Fetches a single resource by its ID.
+  """
+  getResource(id: Int!): Resource
 
   # ResourceGroup Queries
   # getResourceGroups: [ResourceGroup]
@@ -19,8 +25,8 @@ type Query {
   # Break Queries
   getBreaks: [Break] # Assuming you want to query all available breaks
   # WeekSchedule Queries
-  getSchedules: [WeekSchedules]
-  getSchedule(id: ID!): WeekSchedules
+  getSchedules: [Schedule]
+  getSchedule(id: ID!): Schedule
 
   # Orders Queries
   getOrders: [Orders]
@@ -30,11 +36,21 @@ type Query {
 }
 
 type Mutation {
-  # Resource Mutations
-  createResource(input: ResourceInput!): Resources
-  updateResource(id: ID!, input: UpdateResourceInput!): Resources # Added update mutation
-  deleteResource(id: ID!): SuccessMessage # Or return Resource
-  assignScheduleToResource(resourceId: ID!, scheduleId: ID!): Resources # Updates Resource.weekScheduleId
+  # --- Resource Mutations ---
+  """
+  Creates a new resource.
+  """
+  createResource(input: CreateResourceInput!): Resource!
+  """
+  Updates an existing resource by its ID.
+  """
+  updateResource(input: UpdateResourceInput!): Resource!
+  """
+  Deletes a resource by its ID.
+  """
+  deleteResource(id: Int!): SuccessMessage
+
+  assignScheduleToResource(resourceId: ID!, scheduleId: ID!): Resource # Updates Resource.weekScheduleId
   assignAlternativeShiftToResource(
     input: AssignAlternativeShiftInput!
   ): AlternativeShifts
@@ -42,10 +58,7 @@ type Mutation {
   createResourceGroup(input: ResourceGroupInput!): ResourceGroup
   updateResourceGroup(id: ID!, input: UpdateResourceGroupInput!): ResourceGroup
   deleteResourceGroup(id: ID!): SuccessMessage # Or return ResourceGroup
-  addResourceToGroup(
-    resourceId: ID!
-    resourceGroupId: ID!
-  ): REL_Resource_Group_Payload # Creates link in REL_Resource_Group
+  addResourceToGroup(resourceId: ID!, resourceGroupId: ID!): ResourceGroup
   removeResourceFromGroup(resourceId: ID!, resourceGroupId: ID!): SuccessMessage # Deletes link from REL_Resource_Group
   # Shift Mutations
   createShift(input: ShiftFields!): Shift
@@ -58,8 +71,8 @@ type Mutation {
   assignBreakToShift(shiftId: ID!, breakId: ID!): Shift # Manages REL_Break_Shift or implicit M2M
   removeBreakFromShift(shiftId: ID!, breakId: ID!): Shift # Manages REL_Break_Shift or implicit M2M
   # WeekSchedule Mutations
-  createSchedule(input: CreateWeekScheduleInput!): WeekSchedules
-  updateSchedule(id: ID!, input: UpdateWeekScheduleInput!): WeekSchedules
+  createSchedule(input: CreateWeekScheduleInput!): Schedule
+  updateSchedule(id: ID!, input: UpdateWeekScheduleInput!): Schedule
   deleteSchedule(id: ID!): SuccessMessage # Or return WeekSchedule
   updateAlternativeShift(
     id: ID!
@@ -73,32 +86,41 @@ type Mutation {
 
 # --- Main Data Types ---
 
-type Resources {
-  id: ID!
-  name: String
+type Resource {
+  id: Int!
+  name: String!
   description: String
+  picture: String
   color: String
-  picture: String # Prisma Bytes? can be represented as a base64 String
-  external_code: String!
-  weekSchedule: WeekSchedules # Populated via weekScheduleId
-  alternativeShifts: [AlternativeShifts]
-  resourceGroups: [ResourceGroup] # Resources can be in multiple groups
-  orders: [Orders]
-  # resourceChangeoverGroups: [REL_Resource_Changeover_Group_Payload] # If you need to expose this explicitly
+  """
+  External identifier for linking with other systems.
+  """
+  externalCode: String
+  """
+  Whether the resource is accumulative (e.g., a buffer).
+  """
+  accumulative: Boolean
+
+  # --- Relational Fields ---
+  """
+  The weekly schedule assigned to this resource.
+  """
+  schedule: Schedule
+  """
+  Alternative shifts that override the regular schedule.
+  """
+  alternativeShifts: [AlternativeShifts!]!
+  """
+  Orders assigned to this resource.
+  """
+  orders: [Orders!]!
 }
 
 type ResourceGroup {
   id: ID!
   name: String!
   description: String
-  resources: [Resources] # Resources belonging to this group
-}
-
-# Join table payload for Resource <-> ResourceGroup (if needed, e.g., for createdAt)
-type REL_Resource_Group_Payload {
-  resource: Resources!
-  resourceGroup: ResourceGroup!
-  createdAt: DateTime! # Assuming DateTime scalar for ISO strings
+  resources: [Resource] # Resources belonging to this group
 }
 
 type Shift {
@@ -117,7 +139,7 @@ type Break {
   shifts: [Shift!]!
 }
 
-type WeekSchedules { # Renamed from WeekSchedule to WeekSchedules
+type Schedule { #
   id: ID!
   name: String
   monday: Shift
@@ -127,13 +149,13 @@ type WeekSchedules { # Renamed from WeekSchedule to WeekSchedules
   friday: Shift
   saturday: Shift
   sunday: Shift
-  resources: [Resources] # Resources using this schedule
+  resources: [Resource]
 }
 
 type AlternativeShifts { # Renamed from AlternativeShift to AlternativeShifts
   id: ID!
   shift: Shift! # Assuming a shift is mandatory for an alternative shift record
-  resource: Resources!
+  resource: Resource!
   startDate: DateTime! # Assuming DateTime scalar
   endDate: DateTime! # Assuming DateTime scalar
   #status: ENUM ("maintenance", "breakdown", "active") # Example status enum
@@ -168,27 +190,33 @@ type SuccessMessage {
 
 # --- Input Types ---
 
-input ResourceInput {
-  name: String
+"""
+Input for creating a new Resource.
+"""
+input CreateResourceInput {
+  name: String!
   description: String
+  picture: String
   color: String
-  picture: String # Base64 string for Bytes
-  external_code: String!
-  weekScheduleId: ID
-  # For M2M ResourceGroup assignment, use addResourceToGroup mutation
-  # or accept an array of group IDs here if preferred:
-  # resourceGroupIdsToConnect: [ID!]
+  externalCode: String
+  accumulative: Boolean
+  scheduleId: Int
+  changeover_group_id: Int
 }
 
+"""
+Input for updating an existing Resource.
+"""
 input UpdateResourceInput {
+  id: Int!
   name: String
   description: String
-  color: String
   picture: String
-  external_code: String
-  weekScheduleId: ID
-  # resourceGroupIdsToConnect: [ID!]
-  # resourceGroupIdsToDisconnect: [ID!]
+  color: String
+  externalCode: String
+  accumulative: Boolean
+  scheduleId: Int
+  changeover_group_id: Int
 }
 
 input ResourceGroupInput {
@@ -254,13 +282,3 @@ input AssignMassiveAlternativeShiftInput {
   startDate: DateTime!
   endDate: DateTime!
 }
-
-# Example Inputs for Orders (if you add Order mutations)
-# input CreateOrderInput { ... }
-# input UpdateOrderInput { ... }
-
-# Note on Prisma models not explicitly typed in GQL (unless via Payloads):
-# - Attribute, AttributeParameter, ChangeoverGroup, ChangeoverData,
-# - REL_Resource_Changeover_Group
-# - REL_Break_Shift (if you kept it explicit, otherwise it's implicit via Shift.breaks)
-# If direct GQL interaction is needed for these, corresponding types, queries, and mutations would be added.
