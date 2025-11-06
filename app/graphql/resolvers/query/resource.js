@@ -1,42 +1,54 @@
 import prisma from "../../../../prisma/prismaClient.js";
+import { GraphQLError } from "graphql";
+
+const resourceIncludes = {
+  schedule: true,
+  changeoverGroup: true,
+  alternativeShifts: true,
+};
 
 export const getResources = async () => {
   try {
-    const resources = await prisma.resources.findMany();
-    return resources;
+    const allResources = await prisma.resource.findMany({
+      include: resourceIncludes,
+      orderBy: {
+        name: "asc",
+      },
+    });
+    return allResources;
   } catch (error) {
     console.error("Error fetching resources:", error);
-    throw new Error("Failed to fetch resources");
+    throw new GraphQLError("Failed to fetch resources.", {
+      extensions: { code: "INTERNAL_SERVER_ERROR" },
+    });
   }
 };
 
-export const getResourcesByRegularShiftId = async (regularShiftId) => {
-  const resource = await prisma.resources.findMany({
-    where: {
-      regularShiftId,
-    },
-  });
-  return resource;
-};
-
 export const getResource = async (id) => {
-  const resource = await prisma.resources.findUnique({
-    where: {
-      id,
-    },
-  });
-  return resource;
-};
+  try {
+    const singleResource = await prisma.resource.findUnique({
+      where: {
+        id: parseInt(id),
+      },
+      include: {
+        ...resourceIncludes,
+      },
+    });
 
-export const getResourcesByGroupId = async (groupId) => {
-  const relations = await prisma.rEL_group_resource.findMany({
-    where: {
-      groupId,
-    },
-    include: {
-      resource: true,
-    },
-  });
-  const resources = relations.map((relation) => relation.resource);
-  return resources;
+    if (!singleResource) {
+      throw new GraphQLError("Resource not found.", {
+        extensions: { code: "NOT_FOUND" },
+      });
+    }
+
+    return singleResource;
+  } catch (error) {
+    if (error.extensions?.code === "NOT_FOUND") {
+      throw error;
+    }
+    console.error(`Error fetching resource with id ${id}:`, error);
+    throw new GraphQLError("Failed to fetch resource.", {
+      extensions: { code: "INTERNAL_SERVER_ERROR" },
+    });
+  }
 };

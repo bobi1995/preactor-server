@@ -17,7 +17,7 @@ model Resource {
   description  String?
   picture      String?
   color        String?
-  externalCode String   @unique @map("external_code")
+  externalCode String?  @unique @map("external_code")
   accumulative Boolean?
 
   scheduleId        Int?             @map("schedule_id")
