@@ -7,7 +7,11 @@ import {
   deleteResource,
   updateResource,
 } from "./mutation/resource.js";
-import { getResources, getResource } from "./query/resource.js";
+import {
+  getResources,
+  getResource,
+  getResourcesWithoutGroup,
+} from "./query/resource.js";
 import {
   getShiftById,
   getShifts,
@@ -31,6 +35,20 @@ import {
 } from "./mutation/schedule.js";
 import { getBreaks } from "./query/break.js";
 import { getOrders, getOrdersByResourceId } from "./query/order.js";
+import {
+  getResourceGroups,
+  getResourceGroup,
+  getResourceLinksByGroupId,
+  getOrdersByResourceGroupId,
+} from "./query/resourceGroup.js";
+import {
+  createResourceGroup,
+  updateResourceGroup,
+  deleteResourceGroup,
+  addResourcesToGroup,
+  removeResourceFromGroup,
+  removeAllResourcesFromGroup,
+} from "./mutation/resourceGroup.js";
 
 export const resolvers = {
   Query: {
@@ -43,7 +61,16 @@ export const resolvers = {
       }
       return resource;
     },
-    //getGroups: () => getGroups(),
+    getResourcesWithoutGroup: () => getResourcesWithoutGroup(),
+    //RESOURCE GROUP QUERIES
+    getResourceGroups: () => getResourceGroups(),
+    getResourceGroup: async (_, { id }) => {
+      const resourceGroup = await getResourceGroup(id);
+      if (!resourceGroup) {
+        throw notFoundError("Resource group not found");
+      }
+      return resourceGroup;
+    },
     getShifts: () => getShifts(),
     getShift: async (_, { id }) => {
       if (id) {
@@ -77,8 +104,16 @@ export const resolvers = {
     createSchedule: async (_, { input }) => createSchedule({ input }),
     updateSchedule: async (_, { id, input }) => updateSchedule({ id, input }),
     deleteSchedule: async (_, { id }) => deleteSchedule({ id }),
-    // createGroup: async (_, { name, description }) =>
-    // createGroup({ name, description }),
+    //RESOURCE GROUP MUTATIONS
+    createResourceGroup: async (_, { input }) => createResourceGroup({ input }),
+    updateResourceGroup: async (_, { input }) => updateResourceGroup({ input }),
+    deleteResourceGroup: async (_, { id }) => deleteResourceGroup({ id }),
+    addResourcesToGroup: async (_, { resourceIds, resourceGroupId }) =>
+      addResourcesToGroup({ resourceIds, resourceGroupId }),
+    removeResourceFromGroup: async (_, { resourceId, resourceGroupId }) =>
+      removeResourceFromGroup({ resourceId, resourceGroupId }),
+    removeAllResourcesFromGroup: async (_, { resourceGroupId }) =>
+      removeAllResourcesFromGroup({ resourceGroupId }),
     //BREAK-RELATED MUTATIONS
     createBreak: async (_, { input }) => createBreak({ input }),
     updateBreak: async (_, { id, input }) => updateBreak({ id, input }),
@@ -98,21 +133,22 @@ export const resolvers = {
       assignScheduleToResource({ resourceId, scheduleId }),
     assignAlternativeShiftToResource: async (_, { resourceId, shiftId }) =>
       assignAlternativeShiftToResource({ resourceId, shiftId }),
-    // deleteResourceFromGroup: async (_, { groupId, resourceId }) =>
-    //   removeResourceFromGroup({ groupId, resourceId }),
   },
   Resource: {
     schedule: (resource) =>
       resource.scheduleId ? getScheduleById(resource.scheduleId) : null,
     alternativeShifts: (resource) => getAlternativeShifts(resource.id),
     orders: (resource) => getOrdersByResourceId(resource.id),
-    // groups: (resource) => getResourcesByGroupId(resource.id),
   },
-  // Group: {
-  //   resources: (group) => {
-  //     return getResourcesByGroupId(group.id);
-  //   },
-  // },
+  ResourceGroup: {
+    resourceLinks: (resourceGroup) =>
+      getResourceLinksByGroupId(resourceGroup.id),
+    orders: (resourceGroup) => getOrdersByResourceGroupId(resourceGroup.id),
+  },
+  ResourceToGroup: {
+    resource: (link) => link.resource,
+    resourceGroup: (link) => link.resourceGroup,
+  },
   Shift: {
     startHour: (shift) => shift.startHour,
     endHour: (shift) => shift.endHour,

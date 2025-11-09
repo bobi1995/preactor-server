@@ -52,3 +52,29 @@ export const getResource = async (id) => {
     });
   }
 };
+
+/**
+ * Fetches all resources that don't belong to any resource group
+ * @returns {Promise<Array>} Array of resources without group assignments
+ */
+export const getResourcesWithoutGroup = async () => {
+  try {
+    const resourcesWithoutGroup = await prisma.resource.findMany({
+      where: {
+        resourceGroupLinks: {
+          none: {}, // No links in the ResourceToGroup table
+        },
+      },
+      include: resourceIncludes,
+      orderBy: {
+        name: "asc",
+      },
+    });
+    return resourcesWithoutGroup;
+  } catch (error) {
+    console.error("Error fetching resources without group:", error);
+    throw new GraphQLError("Failed to fetch resources without group.", {
+      extensions: { code: "INTERNAL_SERVER_ERROR" },
+    });
+  }
+};
