@@ -13,10 +13,20 @@ type Query {
   Fetches a single resource by its ID.
   """
   getResource(id: Int!): Resource
+  """
+  Fetches all resources that don't belong to any resource group.
+  """
+  getResourcesWithoutGroup: [Resource!]!
 
   # ResourceGroup Queries
-  # getResourceGroups: [ResourceGroup]
-  # getResourceGroup(id: ID!): ResourceGroup
+  """
+  Fetches all resource groups.
+  """
+  getResourceGroups: [ResourceGroup!]!
+  """
+  Fetches a single resource group by its ID.
+  """
+  getResourceGroup(id: Int!): ResourceGroup
 
   # Shift Queries
   getShifts: [Shift]
@@ -55,11 +65,36 @@ type Mutation {
     input: AssignAlternativeShiftInput!
   ): AlternativeShifts
   # ResourceGroup Mutations
-  createResourceGroup(input: ResourceGroupInput!): ResourceGroup
-  updateResourceGroup(id: ID!, input: UpdateResourceGroupInput!): ResourceGroup
-  deleteResourceGroup(id: ID!): SuccessMessage # Or return ResourceGroup
-  addResourceToGroup(resourceId: ID!, resourceGroupId: ID!): ResourceGroup
-  removeResourceFromGroup(resourceId: ID!, resourceGroupId: ID!): SuccessMessage # Deletes link from REL_Resource_Group
+  """
+  Creates a new resource group.
+  """
+  createResourceGroup(input: CreateResourceGroupInput!): ResourceGroup!
+  """
+  Updates an existing resource group by its ID.
+  """
+  updateResourceGroup(input: UpdateResourceGroupInput!): ResourceGroup!
+  """
+  Deletes a resource group by its ID. Also removes all associations in REL_Resource_group.
+  """
+  deleteResourceGroup(id: Int!): SuccessMessage!
+  """
+  Adds multiple resources to a resource group.
+  """
+  addResourcesToGroup(
+    resourceIds: [Int!]!
+    resourceGroupId: Int!
+  ): ResourceGroup!
+  """
+  Removes a resource from a resource group.
+  """
+  removeResourceFromGroup(
+    resourceId: Int!
+    resourceGroupId: Int!
+  ): SuccessMessage!
+  """
+  Removes all resources from a resource group.
+  """
+  removeAllResourcesFromGroup(resourceGroupId: Int!): SuccessMessage!
   # Shift Mutations
   createShift(input: ShiftFields!): Shift
   updateShift(id: ID!, input: ShiftFields!): Shift # Added update mutation
@@ -117,10 +152,23 @@ type Resource {
 }
 
 type ResourceGroup {
-  id: ID!
+  id: Int!
   name: String!
   description: String
-  resources: [Resource] # Resources belonging to this group
+  """
+  Resources linked to this group via the REL_Resource_group table.
+  """
+  resourceLinks: [ResourceToGroup!]!
+  """
+  Orders assigned to this resource group.
+  """
+  orders: [Orders!]!
+}
+
+type ResourceToGroup {
+  resource: Resource!
+  resourceGroup: ResourceGroup!
+  createdAt: DateTime!
 }
 
 type Shift {
@@ -219,12 +267,19 @@ input UpdateResourceInput {
   changeover_group_id: Int
 }
 
-input ResourceGroupInput {
+"""
+Input for creating a new ResourceGroup.
+"""
+input CreateResourceGroupInput {
   name: String!
   description: String
 }
 
+"""
+Input for updating an existing ResourceGroup.
+"""
 input UpdateResourceGroupInput {
+  id: Int!
   name: String
   description: String
 }

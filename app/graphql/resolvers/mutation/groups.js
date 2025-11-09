@@ -1,7 +1,11 @@
 import prisma from "../../../../prisma/prismaClient.js";
 
+/**
+ * @deprecated Use createResourceGroup from resourceGroup.js instead
+ * This file is kept for backwards compatibility but uses correct Prisma model names
+ */
 export const createGroup = async ({ name, description }) => {
-  const group = await prisma.group.create({
+  const group = await prisma.resourceGroup.create({
     data: {
       name,
       description,
@@ -10,11 +14,15 @@ export const createGroup = async ({ name, description }) => {
   return group;
 };
 
+/**
+ * @deprecated Use addResourceToGroup from resourceGroup.js instead
+ * This file is kept for backwards compatibility but uses correct Prisma model names
+ */
 export const addResourceToGroup = async ({ groupId, resourceIds }) => {
   const promises = resourceIds.map((resourceId) =>
-    prisma.rEL_group_resource.create({
+    prisma.resourceToGroup.create({
       data: {
-        groupId,
+        resourceGroupId: groupId,
         resourceId,
       },
     })
@@ -23,10 +31,14 @@ export const addResourceToGroup = async ({ groupId, resourceIds }) => {
   return groupId;
 };
 
+/**
+ * @deprecated Use removeResourceFromGroup from resourceGroup.js instead
+ * This file is kept for backwards compatibility but uses correct Prisma model names
+ */
 export const removeResourceFromGroup = async ({ groupId, resourceId }) => {
-  await prisma.rEL_group_resource.deleteMany({
+  await prisma.resourceToGroup.deleteMany({
     where: {
-      groupId,
+      resourceGroupId: groupId,
       resourceId,
     },
   });
