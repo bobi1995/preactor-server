@@ -39,7 +39,18 @@ type Query {
   getSchedule(id: ID!): Schedule
 
   # Orders Queries
-  getOrders: [Orders]
+  """
+  Fetches all orders.
+  """
+  orders: [Order!]!
+  """
+  Fetches all orders for a specific resource.
+  """
+  ordersByResource(resourceId: Int!): [Order!]!
+  """
+  Fetches all orders for a specific resource group.
+  """
+  ordersByResourceGroup(resourceGroupId: Int!): [Order!]!
 
   # AlternativeShift Queries (Example - if needed)
   # getAlternativeShiftsForResource(resourceId: ID!): [AlternativeShift]
@@ -148,7 +159,7 @@ type Resource {
   """
   Orders assigned to this resource.
   """
-  orders: [Orders!]!
+  orders: [Order]!
 }
 
 type ResourceGroup {
@@ -162,7 +173,7 @@ type ResourceGroup {
   """
   Orders assigned to this resource group.
   """
-  orders: [Orders!]!
+  orders: [Order]!
 }
 
 type ResourceToGroup {
@@ -209,25 +220,30 @@ type AlternativeShifts { # Renamed from AlternativeShift to AlternativeShifts
   #status: ENUM ("maintenance", "breakdown", "active") # Example status enum
 }
 
-type Orders {
-  id: ID!
-  OrderNo: String
-  OpNo: String
-  ResourceExternalCode: String
-  # resource: Resource # Could resolve Resource object from ResourceExternalCode
-  StartTime: DateTime # Prisma DateTime?
-  EndTime: DateTime # Prisma DateTime?
-  Project: String
-  Duration: Int # Prisma Int?
-  Start_min: Int # Prisma Int?
-  End_min: Int # Prisma Int?
-  TaskIndex: String
-  PartNo: String
-  Product: String
-  OpName: String
-  ResourceGroup: String # This is a string field in Orders, distinct from the ResourceGroup model
-  RemainingQuantity: Float # Prisma Float?
-  SetupTime: Int # Prisma Int?
+type Order {
+  id: Int!
+  orderNumber: String!
+  operationNumber: String!
+  startTime: DateTime!
+  endTime: DateTime!
+  project: String
+  duration: Float
+  taskIndex: Float
+  partNumber: String
+  product: String
+  opName: String
+  remainingQuan: Float
+  setupTime: Float
+
+  # Relational fields
+  """
+  The resource assigned to this order.
+  """
+  resource: Resource!
+  """
+  The resource group assigned to this order.
+  """
+  resourceGroup: ResourceGroup!
 }
 
 # --- Utility Types ---

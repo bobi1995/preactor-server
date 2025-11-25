@@ -34,7 +34,12 @@ import {
   updateSchedule,
 } from "./mutation/schedule.js";
 import { getBreaks } from "./query/break.js";
-import { getOrders, getOrdersByResourceId } from "./query/order.js";
+import {
+  getOrders,
+  getOrdersByResource,
+  getOrdersByResourceGroup,
+  getOrdersByResourceId,
+} from "./query/order.js";
 import {
   getResourceGroups,
   getResourceGroup,
@@ -92,7 +97,12 @@ export const resolvers = {
       }
       return schedule;
     },
-    getOrders: () => getOrders(),
+    //ORDER QUERIES
+    orders: () => getOrders(),
+    ordersByResource: async (_, { resourceId }) =>
+      getOrdersByResource(resourceId),
+    ordersByResourceGroup: async (_, { resourceGroupId }) =>
+      getOrdersByResourceGroup(resourceGroupId),
   },
   Mutation: {
     //SHIFT-RELATED MUTATIONS
@@ -148,6 +158,10 @@ export const resolvers = {
   ResourceToGroup: {
     resource: (link) => link.resource,
     resourceGroup: (link) => link.resourceGroup,
+  },
+  Order: {
+    resource: (order) => order.resource,
+    resourceGroup: (order) => order.resourceGroup,
   },
   Shift: {
     startHour: (shift) => shift.startHour,
