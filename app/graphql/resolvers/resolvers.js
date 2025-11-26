@@ -54,6 +54,27 @@ import {
   removeResourceFromGroup,
   removeAllResourcesFromGroup,
 } from "./mutation/resourceGroup.js";
+import { getAttribute, getAttributes } from "./query/attribute.js";
+import {
+  getChangeoverGroups,
+  getChangeoverGroup,
+  getChangeoverTimes,
+  getChangeoverDataMatrix,
+} from "./query/changeover.js";
+import {
+  createAttribute,
+  updateAttribute,
+  deleteAttribute,
+  createAttrParam,
+  deleteAttrParam,
+} from "./mutation/attribute.js";
+import {
+  createChangeoverGroup,
+  updateChangeoverGroup,
+  deleteChangeoverGroup,
+  setChangeoverTime,
+  setChangeoverData,
+} from "./mutation/changeover.js";
 
 export const resolvers = {
   Query: {
@@ -103,6 +124,18 @@ export const resolvers = {
       getOrdersByResource(resourceId),
     ordersByResourceGroup: async (_, { resourceGroupId }) =>
       getOrdersByResourceGroup(resourceGroupId),
+
+    //ATTRIBUTE QUERIES
+    getAttributes: () => getAttributes(),
+    getAttribute: (_, { id }) => getAttribute(id),
+
+    // CHANGEOVER QUERIES
+    getChangeoverGroups: () => getChangeoverGroups(),
+    getChangeoverGroup: (_, { id }) => getChangeoverGroup(id),
+    getChangeoverTimes: (_, { changeoverGroupId }) =>
+      getChangeoverTimes(changeoverGroupId),
+    getChangeoverDataMatrix: (_, { changeoverGroupId, attributeId }) =>
+      getChangeoverDataMatrix(changeoverGroupId, attributeId),
   },
   Mutation: {
     //SHIFT-RELATED MUTATIONS
@@ -143,6 +176,22 @@ export const resolvers = {
       assignScheduleToResource({ resourceId, scheduleId }),
     assignAlternativeShiftToResource: async (_, { resourceId, shiftId }) =>
       assignAlternativeShiftToResource({ resourceId, shiftId }),
+    // ATTRIBUTE MUTATIONS
+    createAttribute: (_, { input }) => createAttribute({ input }),
+    updateAttribute: (_, { id, input }) => updateAttribute({ id, input }),
+    deleteAttribute: (_, { id }) => deleteAttribute({ id }),
+    createAttrParam: (_, { input }) => createAttrParam({ input }),
+    deleteAttrParam: (_, { id }) => deleteAttrParam({ id }),
+
+    // CHANGEOVER MUTATIONS
+    createChangeoverGroup: (_, { name }) => createChangeoverGroup({ name }),
+    updateChangeoverGroup: (_, { id, name }) =>
+      updateChangeoverGroup({ id, name }),
+    deleteChangeoverGroup: (_, { id }) => deleteChangeoverGroup({ id }),
+
+    // UPSERT MUTATIONS
+    setChangeoverTime: (_, { input }) => setChangeoverTime({ input }),
+    setChangeoverData: (_, { input }) => setChangeoverData({ input }),
   },
   Resource: {
     schedule: (resource) =>
@@ -190,6 +239,30 @@ export const resolvers = {
     shifts: (breakObj) => {
       return getShiftsByBreakId(breakObj.id);
     },
+  },
+  Attribute: {
+    attributeParameters: (parent) => {
+      // If already included in parent query (eager loaded), return it
+      if (parent.attributeParameters) return parent.attributeParameters;
+      // Otherwise fetch using helper
+      return getAttributeParameters(parent.id);
+    },
+  },
+
+  ChangeoverGroup: {
+    changeoverTimes: (parent) => {
+      return getChangeoverTimes(parent.id);
+    },
+  },
+
+  ChangeoverTime: {
+    attribute: (parent) => getAttribute(parent.attributeId),
+    changeoverGroup: (parent) => getChangeoverGroup(parent.changeoverGroupId),
+  },
+
+  ChangeoverData: {
+    fromAttributeParameter: (parent) => getAttrParam(parent.fromAttrParamId),
+    toAttributeParameter: (parent) => getAttrParam(parent.toAttrParamId),
   },
 };
 
