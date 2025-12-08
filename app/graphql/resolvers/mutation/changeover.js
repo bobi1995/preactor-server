@@ -23,8 +23,6 @@ export const deleteChangeoverGroup = async ({ id }) => {
   }
 };
 
-// --- Matrix Logic (Upserts) ---
-
 export const setChangeoverTime = async ({ input }) => {
   const { changeoverGroupId, attributeId, changeoverTime } = input;
 
@@ -88,5 +86,17 @@ export const setChangeoverData = async ({ input }) => {
         setupTime,
       },
     });
+  }
+};
+
+export const deleteChangeoverTime = async ({ id }) => {
+  try {
+    // We delete the record that links the Group to the Attribute with the base time
+    await prisma.changeoverTime.delete({
+      where: { id },
+    });
+    return { success: true, message: "Attribute removed from group." };
+  } catch (error) {
+    return { success: false, message: error.message };
   }
 };

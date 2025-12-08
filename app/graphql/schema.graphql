@@ -160,7 +160,7 @@ type Mutation {
   Sets the base time for a Group + Attribute combination. Creates if missing, updates if exists.
   """
   setChangeoverTime(input: SetChangeoverTimeInput!): ChangeoverTime!
-
+  deleteChangeoverTime(id: Int!): SuccessMessage!
   """
   Sets the specific From-To time. Creates if missing, updates if exists.
   """

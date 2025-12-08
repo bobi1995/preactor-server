@@ -74,6 +74,7 @@ import {
   deleteChangeoverGroup,
   setChangeoverTime,
   setChangeoverData,
+  deleteChangeoverTime,
 } from "./mutation/changeover.js";
 
 export const resolvers = {
@@ -191,6 +192,7 @@ export const resolvers = {
 
     // UPSERT MUTATIONS
     setChangeoverTime: (_, { input }) => setChangeoverTime({ input }),
+    deleteChangeoverTime: async (_, { id }) => deleteChangeoverTime({ id }),
     setChangeoverData: (_, { input }) => setChangeoverData({ input }),
   },
   Resource: {
