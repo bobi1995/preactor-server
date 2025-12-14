@@ -196,8 +196,8 @@ model ChangeoverData {
 }
 
 model ChangeoverTime {
-  id             Int   @id @default(autoincrement())
-  changeoverTime Float @map("changeover_time")
+  id             Int    @id @default(autoincrement())
+  changeoverTime Float? @map("changeover_time")
 
   changeoverGroupId Int             @map("changeover_group_id")
   changeoverGroup   ChangeoverGroup @relation(fields: [changeoverGroupId], references: [id])

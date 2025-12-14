@@ -52,8 +52,17 @@ type Query {
   """
   ordersByResourceGroup(resourceGroupId: Int!): [Order!]!
 
-  # AlternativeShift Queries (Example - if needed)
-  # getAlternativeShiftsForResource(resourceId: ID!): [AlternativeShift]
+  # Attributes
+  getAttributes: [Attribute!]!
+  getAttribute(id: Int!): Attribute
+
+  # Changeover Groups
+  getChangeoverGroups: [ChangeoverGroup!]!
+  getChangeoverGroup(id: Int!): ChangeoverGroup
+
+  # Fetch specific matrix data (optional helpers)
+  getChangeoverTimes(changeoverGroupId: Int!): [ChangeoverTime!]!
+  getChangeoverDataMatrix(changeoverGroupId: Int!): [ChangeoverData!]!
 }
 
 type Mutation {
@@ -128,6 +137,32 @@ type Mutation {
   assignMassiveAlternativeShiftToResources(
     input: AssignMassiveAlternativeShiftInput!
   ): [AlternativeShifts]
+
+  # Attribute Management
+  createAttribute(input: CreateAttributeInput!): Attribute!
+  updateAttribute(id: Int!, input: UpdateAttributeInput!): Attribute!
+  deleteAttribute(id: Int!): SuccessMessage!
+
+  # Attribute Parameters
+  createAttrParam(input: CreateAttrParamInput!): AttrParam!
+  deleteAttrParam(id: Int!): SuccessMessage!
+
+  # Changeover Group Management
+  createChangeoverGroup(name: String!): ChangeoverGroup!
+  updateChangeoverGroup(id: Int!, name: String!): ChangeoverGroup!
+  deleteChangeoverGroup(id: Int!): SuccessMessage!
+
+  # Matrix Logic (Upsert logic required)
+  """
+  Sets the base time for a Group + Attribute combination. Creates if missing, updates if exists.
+  """
+  setChangeoverTime(input: SetChangeoverTimeInput!): ChangeoverTime!
+  deleteChangeoverTime(id: Int!): SuccessMessage!
+  """
+  Sets the specific From-To time. Creates if missing, updates if exists.
+  """
+  setChangeoverData(input: SetChangeoverDataInput!): ChangeoverData!
+  deleteChangeoverData(id: Int!): SuccessMessage!
 }
 
 # --- Main Data Types ---
@@ -246,6 +281,47 @@ type Order {
   resourceGroup: ResourceGroup!
 }
 
+type Attribute {
+  id: Int!
+  name: String!
+  attributeParameters: [AttrParam!]!
+}
+
+type AttrParam {
+  id: Int!
+  attributeValue: String!
+  attributeNote: String
+  attributeId: Int!
+}
+
+type ChangeoverGroup {
+  id: Int!
+  name: String!
+  changeoverTimes: [ChangeoverTime!]!
+}
+
+type ChangeoverTime {
+  id: Int!
+  changeoverTime: Float
+  changeoverGroupId: Int!
+  attributeId: Int!
+  # Relational resolved fields
+  attribute: Attribute
+  changeoverGroup: ChangeoverGroup
+}
+
+type ChangeoverData {
+  id: Int!
+  setupTime: Float!
+  changeoverGroupId: Int!
+  attributeId: Int!
+  fromAttrParamId: Int!
+  toAttrParamId: Int!
+  # Relational resolved fields
+  fromAttributeParameter: AttrParam
+  toAttributeParameter: AttrParam
+}
+
 # --- Utility Types ---
 type SuccessMessage {
   success: Boolean!
@@ -352,4 +428,38 @@ input AssignMassiveAlternativeShiftInput {
   shiftId: ID!
   startDate: DateTime!
   endDate: DateTime!
+}
+
+input CreateAttributeInput {
+  name: String!
+  parameters: [CreateAttrParamNestedInput!] # Optional: create params while creating attribute
+}
+
+input UpdateAttributeInput {
+  name: String
+}
+
+input CreateAttrParamNestedInput {
+  attributeValue: String!
+  attributeNote: String
+}
+
+input CreateAttrParamInput {
+  attributeId: Int!
+  attributeValue: String!
+  attributeNote: String
+}
+
+input SetChangeoverTimeInput {
+  changeoverGroupId: Int!
+  attributeId: Int!
+  changeoverTime: Float
+}
+
+input SetChangeoverDataInput {
+  changeoverGroupId: Int!
+  attributeId: Int!
+  fromAttrParamId: Int!
+  toAttrParamId: Int!
+  setupTime: Float!
 }
