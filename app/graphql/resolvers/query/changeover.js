@@ -17,14 +17,10 @@ export const getChangeoverTimes = async (changeoverGroupId) => {
   });
 };
 
-export const getChangeoverDataMatrix = async (
-  changeoverGroupId,
-  attributeId
-) => {
+export const getChangeoverDataMatrix = async (changeoverGroupId) => {
   return await prisma.changeoverData.findMany({
     where: {
       changeoverGroupId,
-      attributeId,
     },
   });
 };

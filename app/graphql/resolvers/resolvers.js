@@ -54,7 +54,11 @@ import {
   removeResourceFromGroup,
   removeAllResourcesFromGroup,
 } from "./mutation/resourceGroup.js";
-import { getAttribute, getAttributes } from "./query/attribute.js";
+import {
+  getAttribute,
+  getAttributes,
+  getAttrParam,
+} from "./query/attribute.js";
 import {
   getChangeoverGroups,
   getChangeoverGroup,
@@ -75,6 +79,7 @@ import {
   setChangeoverTime,
   setChangeoverData,
   deleteChangeoverTime,
+  deleteChangeoverData,
 } from "./mutation/changeover.js";
 
 export const resolvers = {
@@ -194,6 +199,7 @@ export const resolvers = {
     setChangeoverTime: (_, { input }) => setChangeoverTime({ input }),
     deleteChangeoverTime: async (_, { id }) => deleteChangeoverTime({ id }),
     setChangeoverData: (_, { input }) => setChangeoverData({ input }),
+    deleteChangeoverData: async (_, { id }) => deleteChangeoverData({ id }),
   },
   Resource: {
     schedule: (resource) =>

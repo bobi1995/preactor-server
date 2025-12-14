@@ -91,11 +91,49 @@ export const setChangeoverData = async ({ input }) => {
 
 export const deleteChangeoverTime = async ({ id }) => {
   try {
-    // We delete the record that links the Group to the Attribute with the base time
-    await prisma.changeoverTime.delete({
+    // 1. First, we must find the record to know which Group and Attribute it belongs to
+    const recordToDelete = await prisma.changeoverTime.findUnique({
       where: { id },
     });
-    return { success: true, message: "Attribute removed from group." };
+
+    if (!recordToDelete) {
+      return { success: false, message: "Record not found" };
+    }
+
+    const { changeoverGroupId, attributeId } = recordToDelete;
+
+    // 2. Use a Transaction to delete the Matrix Data AND the Time Record atomically
+    await prisma.$transaction([
+      // Step A: Delete all matrix cells (ChangeoverData) for this specific Group + Attribute
+      prisma.changeoverData.deleteMany({
+        where: {
+          changeoverGroupId: changeoverGroupId,
+          attributeId: attributeId,
+        },
+      }),
+
+      // Step B: Delete the ChangeoverTime record itself
+      prisma.changeoverTime.delete({
+        where: { id },
+      }),
+    ]);
+
+    return {
+      success: true,
+      message: "Attribute and all associated matrix data removed from group.",
+    };
+  } catch (error) {
+    console.error(error);
+    return { success: false, message: error.message };
+  }
+};
+
+export const deleteChangeoverData = async ({ id }) => {
+  try {
+    await prisma.changeoverData.delete({
+      where: { id },
+    });
+    return { success: true, message: "Changeover data deleted." };
   } catch (error) {
     return { success: false, message: error.message };
   }

@@ -62,10 +62,7 @@ type Query {
 
   # Fetch specific matrix data (optional helpers)
   getChangeoverTimes(changeoverGroupId: Int!): [ChangeoverTime!]!
-  getChangeoverDataMatrix(
-    changeoverGroupId: Int!
-    attributeId: Int!
-  ): [ChangeoverData!]!
+  getChangeoverDataMatrix(changeoverGroupId: Int!): [ChangeoverData!]!
 }
 
 type Mutation {
@@ -165,6 +162,7 @@ type Mutation {
   Sets the specific From-To time. Creates if missing, updates if exists.
   """
   setChangeoverData(input: SetChangeoverDataInput!): ChangeoverData!
+  deleteChangeoverData(id: Int!): SuccessMessage!
 }
 
 # --- Main Data Types ---
@@ -304,7 +302,7 @@ type ChangeoverGroup {
 
 type ChangeoverTime {
   id: Int!
-  changeoverTime: Float!
+  changeoverTime: Float
   changeoverGroupId: Int!
   attributeId: Int!
   # Relational resolved fields
@@ -455,7 +453,7 @@ input CreateAttrParamInput {
 input SetChangeoverTimeInput {
   changeoverGroupId: Int!
   attributeId: Int!
-  changeoverTime: Float!
+  changeoverTime: Float
 }
 
 input SetChangeoverDataInput {
