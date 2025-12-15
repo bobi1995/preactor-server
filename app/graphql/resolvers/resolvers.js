@@ -206,6 +206,11 @@ export const resolvers = {
       resource.scheduleId ? getScheduleById(resource.scheduleId) : null,
     alternativeShifts: (resource) => getAlternativeShifts(resource.id),
     orders: (resource) => getOrdersByResourceId(resource.id),
+    changeoverGroup: (resource) => {
+      return resource.changeoverGroupId
+        ? getChangeoverGroup(resource.changeoverGroupId)
+        : null;
+    },
   },
   ResourceGroup: {
     resourceLinks: (resourceGroup) =>

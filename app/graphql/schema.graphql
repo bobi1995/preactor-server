@@ -195,6 +195,10 @@ type Resource {
   Orders assigned to this resource.
   """
   orders: [Order]!
+  """
+  The changeover group this resource belongs to.
+  """
+  changeoverGroup: ChangeoverGroup
 }
 
 type ResourceGroup {
