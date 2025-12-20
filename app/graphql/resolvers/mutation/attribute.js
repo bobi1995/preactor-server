@@ -1,16 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-export const createAttribute = async ({ input }) => {
-  const { name, parameters } = input;
+export const createAttribute = async ({ name }) => {
   return await prisma.attribute.create({
     data: {
       name,
-      attributeParameters: {
-        create: parameters || [], // Handles nested creation of values like "Red", "Green"
-      },
     },
-    include: { attributeParameters: true },
   });
 };
 
@@ -26,8 +21,9 @@ export const deleteAttribute = async ({ id }) => {
   // Prisma relations handle cascading if configured, otherwise we delete manually.
   try {
     // Delete parameters first (if cascade isn't set in DB)
-    await prisma.attrParam.deleteMany({ where: { attributeId: id } });
-    await prisma.attribute.delete({ where: { id } });
+
+    await prisma.attrParam.deleteMany({ where: { attributeId: parseInt(id) } });
+    await prisma.attribute.delete({ where: { id: parseInt(id) } });
     return { success: true, message: "Attribute deleted successfully" };
   } catch (error) {
     return { success: false, message: error.message };

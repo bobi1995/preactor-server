@@ -139,9 +139,9 @@ type Mutation {
   ): [AlternativeShifts]
 
   # Attribute Management
-  createAttribute(input: CreateAttributeInput!): Attribute!
+  createAttribute(name: String!): Attribute!
   updateAttribute(id: Int!, input: UpdateAttributeInput!): Attribute!
-  deleteAttribute(id: Int!): SuccessMessage!
+  deleteAttribute(id: ID!): SuccessMessage!
 
   # Attribute Parameters
   createAttrParam(input: CreateAttrParamInput!): AttrParam!
@@ -432,11 +432,6 @@ input AssignMassiveAlternativeShiftInput {
   shiftId: ID!
   startDate: DateTime!
   endDate: DateTime!
-}
-
-input CreateAttributeInput {
-  name: String!
-  parameters: [CreateAttrParamNestedInput!] # Optional: create params while creating attribute
 }
 
 input UpdateAttributeInput {

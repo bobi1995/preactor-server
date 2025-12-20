@@ -183,7 +183,7 @@ export const resolvers = {
     assignAlternativeShiftToResource: async (_, { resourceId, shiftId }) =>
       assignAlternativeShiftToResource({ resourceId, shiftId }),
     // ATTRIBUTE MUTATIONS
-    createAttribute: (_, { input }) => createAttribute({ input }),
+    createAttribute: (_, { name }) => createAttribute({ name }),
     updateAttribute: (_, { id, input }) => updateAttribute({ id, input }),
     deleteAttribute: (_, { id }) => deleteAttribute({ id }),
     createAttrParam: (_, { input }) => createAttrParam({ input }),
