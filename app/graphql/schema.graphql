@@ -63,6 +63,17 @@ type Query {
   # Fetch specific matrix data (optional helpers)
   getChangeoverTimes(changeoverGroupId: Int!): [ChangeoverTime!]!
   getChangeoverDataMatrix(changeoverGroupId: Int!): [ChangeoverData!]!
+
+  # Raw Orders
+  """
+  Fetches all raw orders waiting to be sequenced.
+  """
+  getRawOrders: [OrderRaw!]!
+
+  """
+  Fetches a single raw order and its assigned attributes.
+  """
+  getRawOrder(id: Int!): OrderRaw
 }
 
 type Mutation {
@@ -139,7 +150,7 @@ type Mutation {
   ): [AlternativeShifts]
 
   # Attribute Management
-  createAttribute(name: String!): Attribute!
+  createAttribute(input: CreateAttributeInput!): Attribute!
   updateAttribute(id: Int!, input: UpdateAttributeInput!): Attribute!
   deleteAttribute(id: ID!): SuccessMessage!
 
@@ -163,9 +174,69 @@ type Mutation {
   """
   setChangeoverData(input: SetChangeoverDataInput!): ChangeoverData!
   deleteChangeoverData(id: Int!): SuccessMessage!
+
+  # --- Order Attributes ---
+  """
+  Assigns a technical attribute to a Raw Order.
+  Validation Logic:
+  - If Attribute.isParam is true, you MUST provide attributeParamId.
+  - If Attribute.isParam is false, you MUST provide value.
+  """
+  addOrderAttribute(input: AddOrderAttributeInput!): OrderAttribute!
+
+  """
+  Updates an existing attribute assignment (e.g., changing the value or selected parameter).
+  """
+  updateOrderAttribute(
+    id: Int!
+    input: UpdateOrderAttributeInput!
+  ): OrderAttribute!
+
+  """
+  Removes an attribute assignment from an order.
+  """
+  deleteOrderAttribute(id: Int!): SuccessMessage!
 }
 
 # --- Main Data Types ---
+
+type OrderRaw {
+  id: Int! # Maps to OrdersId
+  belongsToOrderNo: Int!
+  orderNo: String!
+  opNo: Int!
+  operationName: String!
+  partNo: String!
+  product: String!
+  quantity: Float!
+  dueDate: DateTime
+  earliestStartDate: DateTime
+
+  # Detailed fields
+  resourceGroup: Int
+  opTimePerItem: Float
+  batchTime: Float
+  quantityPerHour: Float
+  effectiveOpTime: Float
+  demandDate: DateTime
+  totalSetupTime: Float
+  totalProcessTime: Float
+  criticalRatio: Float
+
+  # Relations
+  attributes: [OrderAttribute!]!
+}
+
+type OrderAttribute {
+  id: Int!
+  orderId: Int!
+  # Relation
+  attribute: Attribute!
+  # If isParam is true, this should be populated
+  attributeParam: AttrParam
+  # If isParam is false, this should be populated
+  value: String
+}
 
 type Resource {
   id: Int!
@@ -288,6 +359,7 @@ type Order {
 type Attribute {
   id: Int!
   name: String!
+  isParam: Boolean
   attributeParameters: [AttrParam!]!
 }
 
@@ -436,6 +508,7 @@ input AssignMassiveAlternativeShiftInput {
 
 input UpdateAttributeInput {
   name: String
+  isParam: Boolean
 }
 
 input CreateAttrParamNestedInput {
@@ -461,4 +534,21 @@ input SetChangeoverDataInput {
   fromAttrParamId: Int!
   toAttrParamId: Int!
   setupTime: Float!
+}
+
+input AddOrderAttributeInput {
+  orderId: Int!
+  attributeId: Int!
+  attributeParamId: Int
+  value: String
+}
+
+input UpdateOrderAttributeInput {
+  attributeParamId: Int
+  value: String
+}
+
+input CreateAttributeInput {
+  name: String!
+  isParam: Boolean
 }

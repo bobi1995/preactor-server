@@ -1,18 +1,24 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-export const createAttribute = async ({ name }) => {
+export const createAttribute = async ({ input }) => {
+  const { name, isParam } = input;
   return await prisma.attribute.create({
     data: {
       name,
+      isParam: isParam !== undefined ? isParam : true,
     },
   });
 };
 
 export const updateAttribute = async ({ id, input }) => {
+  const { name, isParam } = input;
   return await prisma.attribute.update({
     where: { id },
-    data: { ...input },
+    data: {
+      name,
+      isParam: isParam !== undefined ? isParam : true,
+    },
   });
 };
 

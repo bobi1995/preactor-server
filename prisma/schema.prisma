@@ -144,12 +144,13 @@ model Order {
 // -------------------------------------------------------------
 
 model Attribute {
-  id   Int    @id @default(autoincrement())
-  name String @unique
-
+  id                  Int              @id @default(autoincrement())
+  name                String           @unique
+  isParam             Boolean          @default(true)
   attributeParameters AttrParam[]
   changeoverData      ChangeoverData[]
   changeoverTimes     ChangeoverTime[]
+  orderAttributes     OrderAttribute[]
 
   @@map("Attributes")
 }
@@ -164,6 +165,7 @@ model AttrParam {
 
   changeoversFrom ChangeoverData[] @relation("From")
   changeoversTo   ChangeoverData[] @relation("To")
+  orderAttributes OrderAttribute[]
 
   @@map("Attributes_parameters")
 }
@@ -205,6 +207,50 @@ model ChangeoverTime {
   attribute         Attribute       @relation(fields: [attributeId], references: [id])
 
   @@map("Changeover_times")
+}
+
+model OrderRaw {
+  // Mapping 'id' to 'OrdersId' as the unique primary key for specific operation steps
+  id                Int       @id @default(autoincrement()) @map("OrdersId")
+  belongsToOrderNo  Int       @map("BelongsToOrderNo")
+  orderNo           String    @map("OrderNo")
+  earliestStartDate DateTime? @map("EarliestStartDate")
+  dueDate           DateTime? @map("DueDate")
+  criticalRatio     Float?    @map("CriticalRatio")
+  opNo              Int       @map("OpNo")
+  operationName     String    @map("OperationName")
+  resourceGroup     Int?      @map("ResourceGroup")
+  opTimePerItem     Float?    @map("OpTimePerItem")
+  batchTime         Float?    @map("BatchTime")
+  quantityPerHour   Float?    @map("QuantityPerHour")
+  effectiveOpTime   Float?    @map("EffectiveOpTime")
+  demandDate        DateTime? @map("DemandDate")
+  totalSetupTime    Float?    @map("TotalSetupTime")
+  totalProcessTime  Float?    @map("TotalProcessTime")
+  quantity          Float     @map("Quantity")
+  partNo            String    @map("PartNo")
+  product           String    @map("Product")
+
+  // Relations
+  attributes OrderAttribute[]
+
+  @@map("Orders_Raw")
+}
+
+model OrderAttribute {
+  id Int @id @default(autoincrement())
+
+  orderId Int      @map("orderId")
+  order   OrderRaw @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  attributeId Int       @map("attributeId")
+  attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  attributeParamId Int?       @map("attributeParamId")
+  attributeParam   AttrParam? @relation(fields: [attributeParamId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  value            String?    @map("value") // Free text value
+
+  @@map("Orders_attr")
 }
 
 // -------------------------------------------------------------

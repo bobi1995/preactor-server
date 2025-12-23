@@ -81,6 +81,12 @@ import {
   deleteChangeoverTime,
   deleteChangeoverData,
 } from "./mutation/changeover.js";
+import { getRawOrders, getRawOrder } from "./query/orderRaw.js";
+import {
+  addOrderAttribute,
+  updateOrderAttribute,
+  deleteOrderAttribute,
+} from "./mutation/orderAttribute.js";
 
 export const resolvers = {
   Query: {
@@ -142,6 +148,8 @@ export const resolvers = {
       getChangeoverTimes(changeoverGroupId),
     getChangeoverDataMatrix: (_, { changeoverGroupId, attributeId }) =>
       getChangeoverDataMatrix(changeoverGroupId, attributeId),
+    getRawOrders: () => getRawOrders(),
+    getRawOrder: (_, { id }) => getRawOrder(id),
   },
   Mutation: {
     //SHIFT-RELATED MUTATIONS
@@ -183,7 +191,7 @@ export const resolvers = {
     assignAlternativeShiftToResource: async (_, { resourceId, shiftId }) =>
       assignAlternativeShiftToResource({ resourceId, shiftId }),
     // ATTRIBUTE MUTATIONS
-    createAttribute: (_, { name }) => createAttribute({ name }),
+    createAttribute: (_, { input }) => createAttribute({ input }),
     updateAttribute: (_, { id, input }) => updateAttribute({ id, input }),
     deleteAttribute: (_, { id }) => deleteAttribute({ id }),
     createAttrParam: (_, { input }) => createAttrParam({ input }),
@@ -200,6 +208,12 @@ export const resolvers = {
     deleteChangeoverTime: async (_, { id }) => deleteChangeoverTime({ id }),
     setChangeoverData: (_, { input }) => setChangeoverData({ input }),
     deleteChangeoverData: async (_, { id }) => deleteChangeoverData({ id }),
+
+    // ORDER ATTRIBUTE MUTATIONS
+    addOrderAttribute: (_, { input }) => addOrderAttribute({ input }),
+    updateOrderAttribute: (_, { id, input }) =>
+      updateOrderAttribute({ id, input }),
+    deleteOrderAttribute: (_, { id }) => deleteOrderAttribute({ id }),
   },
   Resource: {
     schedule: (resource) =>
@@ -276,6 +290,27 @@ export const resolvers = {
   ChangeoverData: {
     fromAttributeParameter: (parent) => getAttrParam(parent.fromAttrParamId),
     toAttributeParameter: (parent) => getAttrParam(parent.toAttrParamId),
+  },
+  OrderRaw: {
+    attributes: (parent) => {
+      // If prisma 'include' was used, this is already populated.
+      // If not, you could fetch it here, but our query uses 'include'.
+      return parent.attributes || [];
+    },
+  },
+
+  OrderAttribute: {
+    attribute: (parent) => {
+      // If parent.attribute is loaded, return it. Otherwise fetch by ID?
+      // Ideally, rely on Prisma include in the query, but to be safe:
+      if (parent.attribute) return parent.attribute;
+      // You might need to import getAttribute if not eager loaded
+      return null;
+    },
+    attributeParam: (parent) => {
+      if (parent.attributeParamId) return getAttrParam(parent.attributeParamId);
+      return null;
+    },
   },
 };
 
