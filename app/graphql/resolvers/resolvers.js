@@ -87,6 +87,7 @@ import {
   updateOrderAttribute,
   deleteOrderAttribute,
 } from "./mutation/orderAttribute.js";
+import { runScheduler } from "./mutation/scheduler.js";
 
 export const resolvers = {
   Query: {
@@ -214,6 +215,9 @@ export const resolvers = {
     updateOrderAttribute: (_, { id, input }) =>
       updateOrderAttribute({ id, input }),
     deleteOrderAttribute: (_, { id }) => deleteOrderAttribute({ id }),
+
+    // SCHEDULER MUTATION
+    runScheduler: () => runScheduler(),
   },
   Resource: {
     schedule: (resource) =>

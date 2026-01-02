@@ -196,6 +196,10 @@ type Mutation {
   Removes an attribute assignment from an order.
   """
   deleteOrderAttribute(id: Int!): SuccessMessage!
+  """
+  Start Pythnon code generation for order raw sequencing.
+  """
+  runScheduler: SchedulerResponse!
 }
 
 # --- Main Data Types ---
@@ -402,6 +406,12 @@ type ChangeoverData {
 type SuccessMessage {
   success: Boolean!
   message: String
+}
+
+type SchedulerResponse {
+  success: Boolean!
+  message: String
+  output: String
 }
 
 # --- Input Types ---
