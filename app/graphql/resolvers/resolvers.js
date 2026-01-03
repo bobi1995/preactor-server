@@ -81,7 +81,6 @@ import {
   deleteChangeoverTime,
   deleteChangeoverData,
 } from "./mutation/changeover.js";
-import { getRawOrders, getRawOrder } from "./query/orderRaw.js";
 import {
   addOrderAttribute,
   updateOrderAttribute,
@@ -149,8 +148,6 @@ export const resolvers = {
       getChangeoverTimes(changeoverGroupId),
     getChangeoverDataMatrix: (_, { changeoverGroupId, attributeId }) =>
       getChangeoverDataMatrix(changeoverGroupId, attributeId),
-    getRawOrders: () => getRawOrders(),
-    getRawOrder: (_, { id }) => getRawOrder(id),
   },
   Mutation: {
     //SHIFT-RELATED MUTATIONS
@@ -294,13 +291,6 @@ export const resolvers = {
   ChangeoverData: {
     fromAttributeParameter: (parent) => getAttrParam(parent.fromAttrParamId),
     toAttributeParameter: (parent) => getAttrParam(parent.toAttrParamId),
-  },
-  OrderRaw: {
-    attributes: (parent) => {
-      // If prisma 'include' was used, this is already populated.
-      // If not, you could fetch it here, but our query uses 'include'.
-      return parent.attributes || [];
-    },
   },
 
   OrderAttribute: {

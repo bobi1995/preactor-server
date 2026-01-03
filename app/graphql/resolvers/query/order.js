@@ -4,6 +4,12 @@ import { GraphQLError } from "graphql";
 const orderIncludes = {
   resource: true,
   resourceGroup: true,
+  attributes: {
+    include: {
+      attribute: true,
+      attributeParam: true,
+    },
+  },
 };
 
 /**

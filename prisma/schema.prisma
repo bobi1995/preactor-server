@@ -117,24 +117,24 @@ model Break {
 }
 
 model Order {
-  id              Int      @id @default(autoincrement())
-  orderNumber     String   @map("orno")
-  operationNumber String   @map("opno")
-  startTime       DateTime @map("start_time")
-  endTime         DateTime @map("end_time")
+  id              Int              @id @default(autoincrement())
+  orderNumber     String           @map("orno")
+  operationNumber String           @map("opno")
+  startTime       DateTime         @map("start_time")
+  endTime         DateTime         @map("end_time")
   project         String?
   duration        Float?
-  taskIndex       Float?   @map("task_index")
-  partNumber      String?  @map("part_no")
+  taskIndex       Float?           @map("task_index")
+  partNumber      String?          @map("part_no")
   product         String?
-  opName          String?  @map("op_name")
-  remainingQuan   Float?   @map("remaining_quan")
-  setupTime       Float?   @map("setup_time")
-
-  resourceId      Int           @map("resource_id")
-  resource        Resource      @relation(fields: [resourceId], references: [id])
-  resourceGroupId Int           @map("resource_group_id")
-  resourceGroup   ResourceGroup @relation(fields: [resourceGroupId], references: [id])
+  opName          String?          @map("op_name")
+  remainingQuan   Float?           @map("remaining_quan")
+  setupTime       Float?           @map("setup_time")
+  attributes      OrderAttribute[]
+  resourceId      Int              @map("resource_id")
+  resource        Resource         @relation(fields: [resourceId], references: [id])
+  resourceGroupId Int              @map("resource_group_id")
+  resourceGroup   ResourceGroup    @relation(fields: [resourceGroupId], references: [id])
 
   @@map("Orders")
 }
@@ -209,46 +209,19 @@ model ChangeoverTime {
   @@map("Changeover_times")
 }
 
-model OrderRaw {
-  // Mapping 'id' to 'OrdersId' as the unique primary key for specific operation steps
-  id                Int       @id @default(autoincrement()) @map("OrdersId")
-  belongsToOrderNo  Int       @map("BelongsToOrderNo")
-  orderNo           String    @map("OrderNo")
-  earliestStartDate DateTime? @map("EarliestStartDate")
-  dueDate           DateTime? @map("DueDate")
-  criticalRatio     Float?    @map("CriticalRatio")
-  opNo              Int       @map("OpNo")
-  operationName     String    @map("OperationName")
-  resourceGroup     Int?      @map("ResourceGroup")
-  opTimePerItem     Float?    @map("OpTimePerItem")
-  batchTime         Float?    @map("BatchTime")
-  quantityPerHour   Float?    @map("QuantityPerHour")
-  effectiveOpTime   Float?    @map("EffectiveOpTime")
-  demandDate        DateTime? @map("DemandDate")
-  totalSetupTime    Float?    @map("TotalSetupTime")
-  totalProcessTime  Float?    @map("TotalProcessTime")
-  quantity          Float     @map("Quantity")
-  partNo            String    @map("PartNo")
-  product           String    @map("Product")
-
-  // Relations
-  attributes OrderAttribute[]
-
-  @@map("Orders_Raw")
-}
-
 model OrderAttribute {
   id Int @id @default(autoincrement())
 
-  orderId Int      @map("orderId")
-  order   OrderRaw @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId Int   @map("orderId")
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   attributeId Int       @map("attributeId")
   attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   attributeParamId Int?       @map("attributeParamId")
   attributeParam   AttrParam? @relation(fields: [attributeParamId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  value            String?    @map("value") // Free text value
+
+  value String? @map("value")
 
   @@map("Orders_attr")
 }

@@ -6,7 +6,16 @@ const prisma = new PrismaClient();
 export const addOrderAttribute = async ({ input }) => {
   const { orderId, attributeId, attributeParamId, value } = input;
 
-  // 1. Fetch the Attribute Definition to check 'isParam'
+  // 1. Validate that the target Order exists (The "Single Source of Truth")
+  const orderExists = await prisma.order.findUnique({
+    where: { id: orderId },
+  });
+
+  if (!orderExists) {
+    throw new GraphQLError(`Order with ID ${orderId} not found.`);
+  }
+
+  // 2. Fetch the Attribute Definition to check 'isParam'
   const attributeDef = await prisma.attribute.findUnique({
     where: { id: attributeId },
   });
@@ -15,7 +24,7 @@ export const addOrderAttribute = async ({ input }) => {
     throw new GraphQLError("Attribute definition not found");
   }
 
-  // 2. Validate Inputs based on isParam
+  // 3. Validate Inputs based on isParam
   let finalParamId = null;
   let finalValue = null;
 
@@ -39,10 +48,10 @@ export const addOrderAttribute = async ({ input }) => {
     finalParamId = null; // Ignore paramId if sent
   }
 
-  // 3. Create the assignment
+  // 4. Create the assignment linked to the main Order table
   return await prisma.orderAttribute.create({
     data: {
-      orderId,
+      orderId, // This now links to the 'Order' model
       attributeId,
       attributeParamId: finalParamId,
       value: finalValue,
