@@ -63,17 +63,6 @@ type Query {
   # Fetch specific matrix data (optional helpers)
   getChangeoverTimes(changeoverGroupId: Int!): [ChangeoverTime!]!
   getChangeoverDataMatrix(changeoverGroupId: Int!): [ChangeoverData!]!
-
-  # Raw Orders
-  """
-  Fetches all raw orders waiting to be sequenced.
-  """
-  getRawOrders: [OrderRaw!]!
-
-  """
-  Fetches a single raw order and its assigned attributes.
-  """
-  getRawOrder(id: Int!): OrderRaw
 }
 
 type Mutation {
@@ -200,35 +189,6 @@ type Mutation {
   Start Pythnon code generation for order raw sequencing.
   """
   runScheduler: SchedulerResponse!
-}
-
-# --- Main Data Types ---
-
-type OrderRaw {
-  id: Int! # Maps to OrdersId
-  belongsToOrderNo: Int!
-  orderNo: String!
-  opNo: Int!
-  operationName: String!
-  partNo: String!
-  product: String!
-  quantity: Float!
-  dueDate: DateTime
-  earliestStartDate: DateTime
-
-  # Detailed fields
-  resourceGroup: Int
-  opTimePerItem: Float
-  batchTime: Float
-  quantityPerHour: Float
-  effectiveOpTime: Float
-  demandDate: DateTime
-  totalSetupTime: Float
-  totalProcessTime: Float
-  criticalRatio: Float
-
-  # Relations
-  attributes: [OrderAttribute!]!
 }
 
 type OrderAttribute {
@@ -358,6 +318,10 @@ type Order {
   The resource group assigned to this order.
   """
   resourceGroup: ResourceGroup!
+  """
+  Technical attributes assigned to this order.
+  """
+  attributes: [OrderAttribute!]!
 }
 
 type Attribute {
