@@ -254,3 +254,40 @@ model BreakToShift {
   @@id([breakId, shiftId])
   @@map("REL_Break_Shift")
 }
+
+// -------------------------------------------------------------
+// | Optimizer Models                                         |
+// -------------------------------------------------------------
+
+model OptimizerSetting {
+  id                 Int     @id @default(autoincrement())
+  strategy           String  @default("balanced")
+  campaignWindowDays Int     @default(0)
+  gravity            Boolean @default(true)
+
+  // Stored as comma-separated string "1,5,2"
+  resourcePriority String? @default("")
+
+  updatedAt DateTime @updatedAt
+
+  @@map("Optimizer_Settings")
+}
+
+model OptimizerExecution {
+  id              Int       @id @default(autoincrement())
+  startTime       DateTime  @default(now())
+  endTime         DateTime?
+  durationSeconds Float?
+  status          String // "RUNNING", "SUCCESS", "FAILED"
+
+  // Snapshot
+  strategy           String
+  campaignWindowDays Int
+  gravity            Boolean
+  resourcePriority   String?
+
+  recordCount  Int?
+  errorMessage String?
+
+  @@map("Optimizer_Executions")
+}
