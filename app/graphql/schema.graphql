@@ -63,6 +63,10 @@ type Query {
   # Fetch specific matrix data (optional helpers)
   getChangeoverTimes(changeoverGroupId: Int!): [ChangeoverTime!]!
   getChangeoverDataMatrix(changeoverGroupId: Int!): [ChangeoverData!]!
+
+  # Optimizer Settings and Executions
+  getOptimizerSettings: OptimizerSetting!
+  getOptimizerExecutions: [OptimizerExecution!]!
 }
 
 type Mutation {
@@ -185,6 +189,19 @@ type Mutation {
   Removes an attribute assignment from an order.
   """
   deleteOrderAttribute(id: Int!): SuccessMessage!
+
+  """
+  Updates default settings. Converts priority array to CSV string for DB.
+  """
+  updateOptimizerSettings(
+    input: UpdateOptimizerSettingInput!
+  ): OptimizerSetting!
+
+  """
+  Runs the python script with specific or default parameters.
+  """
+  runOptimizer(input: RunOptimizerInput): SuccessMessage!
+
   """
   Start Pythnon code generation for order raw sequencing.
   """
@@ -366,6 +383,35 @@ type ChangeoverData {
   toAttributeParameter: AttrParam
 }
 
+# --- Optimizer Types ---
+
+type OptimizerSetting {
+  id: Int!
+  strategy: String!
+  campaignWindowDays: Int!
+  gravity: Boolean!
+  # ✅ API returns Array, DB stores String
+  resourcePriority: [Int!]!
+  updatedAt: DateTime!
+}
+
+type OptimizerExecution {
+  id: Int!
+  startTime: DateTime!
+  endTime: DateTime
+  durationSeconds: Float
+  status: String!
+
+  # Snapshot parameters
+  strategy: String!
+  campaignWindowDays: Int!
+  gravity: Boolean!
+  resourcePriority: [Int!] # Snapshot might be empty/null, but we return array
+  # Metrics
+  recordCount: Int
+  errorMessage: String
+}
+
 # --- Utility Types ---
 type SuccessMessage {
   success: Boolean!
@@ -525,4 +571,18 @@ input UpdateOrderAttributeInput {
 input CreateAttributeInput {
   name: String!
   isParam: Boolean
+}
+
+input UpdateOptimizerSettingInput {
+  strategy: String
+  campaignWindowDays: Int
+  gravity: Boolean
+  resourcePriority: [Int!]
+}
+
+input RunOptimizerInput {
+  strategy: String
+  campaignWindowDays: Int
+  gravity: Boolean
+  resourcePriority: [Int!]
 }

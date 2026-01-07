@@ -86,8 +86,15 @@ import {
   updateOrderAttribute,
   deleteOrderAttribute,
 } from "./mutation/orderAttribute.js";
-import { runScheduler } from "./mutation/scheduler.js";
-
+import {
+  runOptimizer,
+  TypeResolvers,
+  updateOptimizerSettings,
+} from "./mutation/optimizer.js";
+import {
+  getOptimizerSettings,
+  getOptimizerExecutions,
+} from "./query/optimizer.js";
 export const resolvers = {
   Query: {
     hello: () => "Hello World",
@@ -148,6 +155,10 @@ export const resolvers = {
       getChangeoverTimes(changeoverGroupId),
     getChangeoverDataMatrix: (_, { changeoverGroupId, attributeId }) =>
       getChangeoverDataMatrix(changeoverGroupId, attributeId),
+
+    // OPTIMIZER QUERIES
+    getOptimizerSettings: () => getOptimizerSettings(),
+    getOptimizerExecutions: () => getOptimizerExecutions(),
   },
   Mutation: {
     //SHIFT-RELATED MUTATIONS
@@ -213,8 +224,10 @@ export const resolvers = {
       updateOrderAttribute({ id, input }),
     deleteOrderAttribute: (_, { id }) => deleteOrderAttribute({ id }),
 
-    // SCHEDULER MUTATION
-    runScheduler: () => runScheduler(),
+    // OPTIMIZER MUTATIONS
+    updateOptimizerSettings: (_, { input }) =>
+      updateOptimizerSettings({ input }),
+    runOptimizer: (_, { input }) => runOptimizer({ input }),
   },
   Resource: {
     schedule: (resource) =>
