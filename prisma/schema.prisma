@@ -291,3 +291,21 @@ model OptimizerExecution {
 
   @@map("Optimizer_Executions")
 }
+
+model OptimizationScenario {
+  id               Int     @id @default(autoincrement())
+  name             String  @unique
+  description      String?
+  isDefault        Boolean @default(false)
+  latenessWeight   Int     @default(100)
+  changeoverWeight Int     @default(100)
+  makespanWeight   Int     @default(100)
+  loadRangeWeight  Int     @default(10)
+  maxLoadWeight    Int     @default(10)
+  gravityWeight    Int     @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("Optimization_Scenarios")
+}

@@ -86,15 +86,22 @@ import {
   updateOrderAttribute,
   deleteOrderAttribute,
 } from "./mutation/orderAttribute.js";
-import {
-  runOptimizer,
-  TypeResolvers,
-  updateOptimizerSettings,
-} from "./mutation/optimizer.js";
+import { runOptimizer, updateOptimizerSettings } from "./mutation/optimizer.js";
 import {
   getOptimizerSettings,
   getOptimizerExecutions,
 } from "./query/optimizer.js";
+import {
+  getOptimizationScenarios,
+  getOptimizationScenario,
+} from "./query/optimizationScenario.js";
+import {
+  createOptimizationScenario,
+  updateOptimizationScenario,
+  deleteOptimizationScenario,
+  setDefaultScenario,
+} from "./mutation/optimizationScenario.js";
+
 export const resolvers = {
   Query: {
     hello: () => "Hello World",
@@ -159,6 +166,9 @@ export const resolvers = {
     // OPTIMIZER QUERIES
     getOptimizerSettings: () => getOptimizerSettings(),
     getOptimizerExecutions: () => getOptimizerExecutions(),
+    // SCENARIO QUERIES
+    getOptimizationScenarios: () => getOptimizationScenarios(),
+    getOptimizationScenario: (_, { id }) => getOptimizationScenario({ id }),
   },
   Mutation: {
     //SHIFT-RELATED MUTATIONS
@@ -228,6 +238,14 @@ export const resolvers = {
     updateOptimizerSettings: (_, { input }) =>
       updateOptimizerSettings({ input }),
     runOptimizer: (_, { input }) => runOptimizer({ input }),
+    // SCENARIO MUTATIONS
+    createOptimizationScenario: (_, { input }) =>
+      createOptimizationScenario({ input }),
+    updateOptimizationScenario: (_, { input }) =>
+      updateOptimizationScenario({ input }),
+    deleteOptimizationScenario: (_, { id }) =>
+      deleteOptimizationScenario({ id }),
+    setDefaultScenario: (_, { id }) => setDefaultScenario({ id }),
   },
   Resource: {
     schedule: (resource) =>
