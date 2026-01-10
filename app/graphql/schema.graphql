@@ -67,6 +67,8 @@ type Query {
   # Optimizer Settings and Executions
   getOptimizerSettings: OptimizerSetting!
   getOptimizerExecutions: [OptimizerExecution!]!
+  getOptimizationScenarios: [OptimizationScenario!]!
+  getOptimizationScenario(id: Int!): OptimizationScenario
 }
 
 type Mutation {
@@ -201,11 +203,14 @@ type Mutation {
   Runs the python script with specific or default parameters.
   """
   runOptimizer(input: RunOptimizerInput): SuccessMessage!
-
-  """
-  Start Pythnon code generation for order raw sequencing.
-  """
-  runScheduler: SchedulerResponse!
+  createOptimizationScenario(
+    input: CreateOptimizationScenarioInput!
+  ): OptimizationScenario!
+  updateOptimizationScenario(
+    input: UpdateOptimizationScenarioInput!
+  ): OptimizationScenario!
+  deleteOptimizationScenario(id: Int!): SuccessMessage!
+  setDefaultScenario(id: Int!): SuccessMessage!
 }
 
 type OrderAttribute {
@@ -412,6 +417,21 @@ type OptimizerExecution {
   errorMessage: String
 }
 
+type OptimizationScenario {
+  id: Int!
+  name: String!
+  description: String
+  latenessWeight: Int!
+  changeoverWeight: Int!
+  makespanWeight: Int!
+  loadRangeWeight: Int!
+  maxLoadWeight: Int!
+  gravityWeight: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  isDefault: Boolean!
+}
+
 # --- Utility Types ---
 type SuccessMessage {
   success: Boolean!
@@ -581,8 +601,33 @@ input UpdateOptimizerSettingInput {
 }
 
 input RunOptimizerInput {
-  strategy: String
+  scenarioId: Int!
   campaignWindowDays: Int
   gravity: Boolean
   resourcePriority: [Int!]
+}
+
+input CreateOptimizationScenarioInput {
+  name: String!
+  description: String
+  latenessWeight: Int
+  changeoverWeight: Int
+  makespanWeight: Int
+  loadRangeWeight: Int
+  maxLoadWeight: Int
+  gravityWeight: Int
+  isDefault: Boolean!
+}
+
+input UpdateOptimizationScenarioInput {
+  id: Int!
+  name: String
+  description: String
+  latenessWeight: Int
+  changeoverWeight: Int
+  makespanWeight: Int
+  loadRangeWeight: Int
+  maxLoadWeight: Int
+  gravityWeight: Int
+  isDefault: Boolean
 }
