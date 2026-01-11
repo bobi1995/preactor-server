@@ -19,7 +19,6 @@ export const getOptimizerSettings = async () => {
       id: 0,
       strategy: "balanced",
       campaignWindowDays: 0,
-      gravity: true,
       resourcePriority: [], // ✅ RETURN EMPTY ARRAY, NOT STRING
       updatedAt: new Date(),
     };

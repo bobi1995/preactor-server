@@ -20,7 +20,6 @@ const serializePriority = (arr) => {
   return arr.join(",");
 };
 
-// ... Queries and TypeResolvers (unchanged) ...
 export const getOptimizerSettings = async () => {
   const settings = await prisma.optimizerSetting.findFirst();
   if (!settings)
@@ -28,7 +27,6 @@ export const getOptimizerSettings = async () => {
       id: 0,
       strategy: "balanced",
       campaignWindowDays: 0,
-      gravity: true,
       resourcePriority: "",
     };
   return settings;
@@ -69,7 +67,6 @@ export const updateOptimizerSettings = async ({ input }) => {
       id: 1,
       strategy: "balanced",
       campaignWindowDays: 0,
-      gravity: true,
       ...dataToSave,
     },
   });
@@ -78,47 +75,66 @@ export const updateOptimizerSettings = async ({ input }) => {
     resourcePriority: parsePriority(settings.resourcePriority),
   };
 };
-
-// --- MAIN RUN MUTATION (SYNCHRONOUS) ---
 export const runOptimizer = async ({ input }) => {
-  const { scenarioId, campaignWindowDays, gravity, resourcePriority } = input;
+  // 1. Fetch Global Defaults from DB (to handle cases where UI sends empty)
+  const globalSettings = await prisma.optimizerSetting.findFirst();
 
-  // 1. Fetch Scenario Name
+  // 2. Determine Final Parameters (Input Override > Global Default)
+  const scenarioId = input.scenarioId;
+
+  // Window Days: Use Input if > 0, otherwise DB, otherwise 0
+  const campaignWindowDays =
+    input.campaignWindowDays && input.campaignWindowDays > 0
+      ? input.campaignWindowDays
+      : globalSettings?.campaignWindowDays || 0;
+
+  // Resource Priority: Use Input if exists/not empty, otherwise DB, otherwise empty
+  let finalResourcePriority = [];
+  if (input.resourcePriority && input.resourcePriority.length > 0) {
+    finalResourcePriority = input.resourcePriority;
+  } else if (globalSettings?.resourcePriority) {
+    finalResourcePriority = parsePriority(globalSettings.resourcePriority);
+  }
+
+  // 3. Fetch Scenario Name (for logging DB record)
   const scenario = await prisma.optimizationScenario.findUnique({
     where: { id: scenarioId },
   });
 
-  // 2. Log DB Record (RUNNING)
+  // 4. Create DB Execution Record
   const execution = await prisma.optimizerExecution.create({
     data: {
       status: "RUNNING",
       strategy: scenario ? scenario.name : "Unknown",
-      campaignWindowDays: campaignWindowDays || 0,
-      gravity: !!gravity,
-      resourcePriority: resourcePriority ? resourcePriority.join(",") : "",
+      campaignWindowDays: campaignWindowDays,
+      resourcePriority: finalResourcePriority.join(","), // Store the ACTUAL used priority
       startTime: new Date(),
     },
   });
 
-  // 3. Build Command
+  console.log(`🚀 Starting Optimizer [Job ID: ${execution.id}]`);
+
+  // 5. Build Command
   const pythonPath =
     "D:\\coding\\lesto\\preactor2.0\\optiplan-optimizer\\venv\\Scripts\\python.exe";
   const scriptPath =
     "D:\\coding\\lesto\\preactor2.0\\optiplan-optimizer\\main.py";
 
   const args = [scriptPath, "--scenario_id", String(scenarioId)];
-  if (campaignWindowDays && campaignWindowDays > 0)
+
+  if (campaignWindowDays > 0) {
     args.push("--campaign_window_days", String(campaignWindowDays));
-  if (gravity === true) args.push("--gravity");
-  else if (gravity === false) args.push("--no-gravity");
-  if (resourcePriority && resourcePriority.length > 0)
-    args.push("--resource_priority", resourcePriority.join(","));
+  }
 
-  console.log(
-    `🚀 [Optimizer] Executing (WAITING): "${pythonPath}" ${args.join(" ")}`
-  );
+  // ✅ Pass the calculated priority list
+  if (finalResourcePriority.length > 0) {
+    args.push("--resource_priority", finalResourcePriority.join(","));
+  }
 
-  // 4. Wrap Spawn in Promise to WAIT
+  // ✅ Clean Log: Shows exactly what you would type in terminal
+  console.log(`Command: ${pythonPath} ${args.join(" ")}`);
+
+  // 6. Execute Synchronously (Wait for finish)
   const executionResult = await new Promise((resolve) => {
     const process = spawn(pythonPath, args);
 
@@ -126,8 +142,12 @@ export const runOptimizer = async ({ input }) => {
     let stderrData = "";
 
     process.stdout.on("data", (data) => {
-      stdoutData += data.toString();
+      const str = data.toString();
+      stdoutData += str;
+      // Optional: Stream output to console so you see progress
+      console.log(`[Optimizer]: ${str.trim()}`);
     });
+
     process.stderr.on("data", (data) => {
       stderrData += data.toString();
     });
@@ -140,13 +160,11 @@ export const runOptimizer = async ({ input }) => {
       const countMatch = stdoutData.match(/PROCESSED_COUNT:\s*(\d+)/);
       if (countMatch) recordCount = parseInt(countMatch[1], 10);
 
-      console.log(
-        `🏁 [Optimizer] Job ${execution.id} finished (Code: ${code})`
-      );
-
       const status = code === 0 ? "SUCCESS" : "FAILED";
       const errorMessage =
         code === 0 ? undefined : stderrData || "Unknown error";
+
+      console.log(`🏁 Job ${execution.id} finished with code ${code}`);
 
       await prisma.optimizerExecution.update({
         where: { id: execution.id },
@@ -159,7 +177,6 @@ export const runOptimizer = async ({ input }) => {
         },
       });
 
-      // Resolve the promise so the mutation can finally return
       resolve({
         success: code === 0,
         message:
@@ -170,6 +187,5 @@ export const runOptimizer = async ({ input }) => {
     });
   });
 
-  // 5. Return AFTER the script is done
   return executionResult;
 };

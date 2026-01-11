@@ -260,30 +260,25 @@ model BreakToShift {
 // -------------------------------------------------------------
 
 model OptimizerSetting {
-  id                 Int     @id @default(autoincrement())
-  strategy           String  @default("balanced")
-  campaignWindowDays Int     @default(0)
-  gravity            Boolean @default(true)
-
+  id                 Int      @id @default(autoincrement())
+  strategy           String   @default("balanced")
+  campaignWindowDays Int      @default(0)
   // Stored as comma-separated string "1,5,2"
-  resourcePriority String? @default("")
-
-  updatedAt DateTime @updatedAt
+  resourcePriority   String?  @default("")
+  updatedAt          DateTime @updatedAt
 
   @@map("Optimizer_Settings")
 }
 
 model OptimizerExecution {
-  id              Int       @id @default(autoincrement())
-  startTime       DateTime  @default(now())
-  endTime         DateTime?
-  durationSeconds Float?
-  status          String // "RUNNING", "SUCCESS", "FAILED"
-
+  id                 Int       @id @default(autoincrement())
+  startTime          DateTime  @default(now())
+  endTime            DateTime?
+  durationSeconds    Float?
+  status             String // "RUNNING", "SUCCESS", "FAILED"
   // Snapshot
   strategy           String
   campaignWindowDays Int
-  gravity            Boolean
   resourcePriority   String?
 
   recordCount  Int?

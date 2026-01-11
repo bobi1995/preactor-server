@@ -394,7 +394,6 @@ type OptimizerSetting {
   id: Int!
   strategy: String!
   campaignWindowDays: Int!
-  gravity: Boolean!
   # ✅ API returns Array, DB stores String
   resourcePriority: [Int!]!
   updatedAt: DateTime!
@@ -410,7 +409,6 @@ type OptimizerExecution {
   # Snapshot parameters
   strategy: String!
   campaignWindowDays: Int!
-  gravity: Boolean!
   resourcePriority: [Int!] # Snapshot might be empty/null, but we return array
   # Metrics
   recordCount: Int
@@ -596,14 +594,12 @@ input CreateAttributeInput {
 input UpdateOptimizerSettingInput {
   strategy: String
   campaignWindowDays: Int
-  gravity: Boolean
   resourcePriority: [Int!]
 }
 
 input RunOptimizerInput {
   scenarioId: Int!
   campaignWindowDays: Int
-  gravity: Boolean
   resourcePriority: [Int!]
 }
 
